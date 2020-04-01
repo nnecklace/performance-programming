@@ -23,9 +23,6 @@ long getMemoryUsage() {
     return 0;
 }
 
-// this vector is used for storing the 64 bit numbers from one of the binary files
-vector<ll> v;
-
 vector<uint8_t> vByteEncode(ll numberBlock) {
   vector<uint8_t> bytes;
   while (true) {
@@ -103,8 +100,14 @@ void decode(string& filename) {
 void sortFile(string& filename) {
   ifstream input(filename, ios::binary);
   ofstream output("output/"+(filename.substr(filename.find_last_of("/")+1))+".sorted.vb", ios::binary);
+
   ll numberBytes;
-  while(input.read(reinterpret_cast<char*>(&numberBytes), sizeof(numberBytes))) v.push_back(numberBytes);
+  vector<ll> v;
+
+  while(input.read(reinterpret_cast<char*>(&numberBytes), sizeof(numberBytes))) {
+    v.push_back(numberBytes);
+  }
+
   sort(v.begin(), v.end());
   
   for (size_t i = 1; i < v.size(); ++i) {
@@ -112,8 +115,6 @@ void sortFile(string& filename) {
     vector<uint8_t> result = vByteEncode(difference);
     output.write((char*)&result[0], result.size());
   }
-
-  v.clear();
 
   input.close();
   output.close();

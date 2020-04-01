@@ -11,6 +11,8 @@ using namespace codec;
 using namespace file;
 using namespace chrono;
 
+typedef void(*commandLineFunction)(File& in, File& ou, Codec& c);
+
 // Found on stackoverflow: https://stackoverflow.com/questions/1543157/how-can-i-find-out-how-much-memory-my-c-app-is-using-on-the-mac
 long getMemoryUsage() {
   struct rusage usage;
@@ -36,20 +38,11 @@ const string OUTDIR = "--output";
 // This is only needed for macos 
 namespace fs = std::experimental::filesystem;
 
+// Helper
 string getExt(string& cmd) {
   if (cmd == ENCODE) return ".vb";
   if (cmd == DECODE) return ".dec";
   if (cmd == SORT) return ".sorted.vb";
-
-  return "";
-}
-
-string getOutDir(char** args) {
-  int i = 0;
-  while (args[i]) {
-    if (args[i] == OUTDIR) return args[i+1];
-    i++;
-  }
 
   return "";
 }
@@ -76,23 +69,39 @@ void sort(File& inFile, File& outFile, Codec& codec) {
 }
 
 template<typename T, enable_if_t<is_unsigned<T>::value>* = nullptr>
-void each(string& inDir, string& outDir, string& cmd, Codec& codec) {
+void each(string& inDir, string& outDir, string& ext, commandLineFunction& cmdFn, Codec& codec) {
   for (auto file : fs::directory_iterator(inDir)) {
     if (!fs::is_regular_file(fs::status(file))) continue;
 
-    string path = file.path().string();
-    string outputFile = outDir+"/"+file.path().filename().string()+getExt(cmd);
+    string inPath = file.path().string();
+    string outPath = outDir+"/"+file.path().filename().string()+ext;
 
-    File input (path, ios::in);
-    File output(outputFile, ios::out);
+    File input (inPath, ios::in);
+    File output(outPath, ios::out);
 
-    if (cmd == ENCODE) encode<T>(input, output, codec);
-    if (cmd == DECODE) decode<T>(input, output, codec);
-    if (cmd == SORT)   sort<T>(input, output, codec);
+    cmdFn(input, output, codec);
 
     output.close();
     input.close();
   }
+}
+
+// Helpers
+string getOutDir(char** args) {
+  int i = 0;
+  while (args[i]) {
+    if (args[i] == OUTDIR) return args[i+1];
+    i++;
+  }
+
+  return "";
+}
+
+commandLineFunction getCmdFunction(string cmd) {
+  if (cmd == ENCODE) return encode<ll>;
+  if (cmd == DECODE) return decode<ll>;
+  
+  return sort<ll>;
 }
 
 // ./main --encode --all input --output output 
@@ -119,6 +128,8 @@ int main([[maybe_unused]]int argc, char** args) {
   }
 
   string operation = args[2];
+  commandLineFunction cmdFn = getCmdFunction(cmd);
+  string ext = getExt(cmd);
   Codec codec;
 
   if (operation == D) {
@@ -128,7 +139,7 @@ int main([[maybe_unused]]int argc, char** args) {
     if (fs::is_directory(fs::status(inDir))) {
       auto ws = system_clock::now();
       time_t ss = time(NULL);
-      each<ll>(inDir, outDir, cmd, codec);
+      each<ll>(inDir, outDir, ext, cmdFn, codec);
       time_t se = time(NULL);
       auto we = system_clock::now();
 
@@ -146,16 +157,14 @@ int main([[maybe_unused]]int argc, char** args) {
 
   string fileArg = args[3];
   string inputFile = fs::path(fileArg).filename();
-  string outputFile = inputFile+getExt(cmd);
+  string outputFile = inputFile+ext;
 
   File input(inputFile, ios::in);
   File output(outputFile, ios::out);
 
   auto ws = system_clock::now();
   time_t ss = time(NULL);
-  if (cmd == ENCODE) encode<ll>(input, output, codec);
-  if (cmd == DECODE) decode<ll>(input, output, codec);
-  if (cmd == SORT)   sort<ll>(input, output, codec);
+  cmdFn(input, output, codec);
   time_t se = time(NULL);
   auto we = system_clock::now();
 
