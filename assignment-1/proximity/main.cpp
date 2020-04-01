@@ -48,13 +48,13 @@ void printV(vector<ui8>& w) {
   cout << endl;
 }
 
-void naiveSolution(vector<ui8>& a, vector<ui8>& b) {
-  for (ui8 z : a) {
+void naiveSolution() {
+  for (ui8 z : setA) {
     int x = z-upper;
     x = max(x, 0);
     int y = z+lower;
     y = min(y, 255);
-    for (ui8 u : b) {
+    for (ui8 u : setB) {
       if (u >= x && u <= y && !visited[u]) {
         naiveCount++;
         visited[u] = true;
@@ -116,7 +116,7 @@ int main() {
     loadFile(entry.first, setA);
     loadFile(entry.second, setB);
 
-    naiveSolution(setA, setB);
+    naiveSolution();
     solution();
   }
 
