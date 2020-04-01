@@ -14,10 +14,11 @@ using namespace chrono;
 // Found on stackoverflow: https://stackoverflow.com/questions/1543157/how-can-i-find-out-how-much-memory-my-c-app-is-using-on-the-mac
 long getMemoryUsage() {
   struct rusage usage;
-  if(0 == getrusage(RUSAGE_SELF, &usage))
+  if(0 == getrusage(RUSAGE_SELF, &usage)) {
     return usage.ru_maxrss; // bytes
-  else
+  } else {
     return 0;
+  }
 }
 
 // Commands
@@ -82,17 +83,15 @@ void each(string& inDir, string& outDir, string& cmd, Codec& codec) {
     string path = file.path().string();
     string outputFile = outDir+"/"+file.path().filename().string()+getExt(cmd);
 
-    File* input = new File(path, ios::in);
-    File* output = new File(outputFile, ios::out);
+    File input (path, ios::in);
+    File output(outputFile, ios::out);
 
-    if (cmd == ENCODE) encode<T>(*input, *output, codec);
-    if (cmd == DECODE) decode<T>(*input, *output, codec);
-    if (cmd == SORT)   sort<T>(*input, *output, codec);
+    if (cmd == ENCODE) encode<T>(input, output, codec);
+    if (cmd == DECODE) decode<T>(input, output, codec);
+    if (cmd == SORT)   sort<T>(input, output, codec);
 
-    output->close();
-    input->close();
-    delete input;
-    delete output;
+    output.close();
+    input.close();
   }
 }
 
