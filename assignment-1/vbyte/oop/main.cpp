@@ -156,11 +156,12 @@ int main([[maybe_unused]]int argc, char** args) {
   }
 
   string fileArg = args[3];
-  string inputFile = fs::path(fileArg).filename();
-  string outputFile = inputFile+ext;
+  string filename = fs::path(fileArg).filename();
+  string inPath = fs::path(fileArg).string();
+  string outPath = getOutDir(args)+filename+ext;
 
-  File input(inputFile, ios::in);
-  File output(outputFile, ios::out);
+  File input(inPath, ios::in);
+  File output(outPath, ios::out);
 
   auto ws = system_clock::now();
   time_t ss = time(NULL);
