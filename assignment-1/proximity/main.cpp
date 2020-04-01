@@ -4,6 +4,17 @@
 #include <fstream>
 #include <string>
 #include <cstring>
+#include <chrono>
+#include <ctime>
+
+long getMemoryUsage() {
+  struct rusage usage;
+  if(0 == getrusage(RUSAGE_SELF, &usage)) {
+    return usage.ru_maxrss; // bytes
+  } else {
+    return 0;
+  }
+}
 
 typedef uint8_t ui8; 
 typedef unsigned int ui;
@@ -23,7 +34,8 @@ void loadFile(ui code, vector<ui8>& buffer) {
   string filename = DIR+"/"+"F"+to_string(code)+".vb";
   fstream input(filename, ios::in | ios::binary);
   ui8 byteSize;
-  memset(dt, false, sizeof(dt));
+  // not sure if buggy or not
+  memset(dt, 0, 256);
 
   while (input.read(reinterpret_cast<char*>(&byteSize), sizeof(byteSize))) {
     if (dt[byteSize]) continue;
@@ -34,19 +46,12 @@ void loadFile(ui code, vector<ui8>& buffer) {
   input.close();
 }
 
-void printV(vector<ui8>& w) {
-  for (size_t i = 0; i < w.size(); ++i) {
-    cout << (ui)w[i] << " ";
-  }
-  cout << endl;
-}
-
 ui bruteForce(vector<ui8>& setA, vector<ui8>& setB) {
   ui size = 0;
   ui alloc = (*setB.rbegin())+1;
   // we could assume the size is at max 256
-  bool* visited = new bool[alloc];
-  memset(visited, false, alloc*sizeof(*visited));
+  vector<bool> visited;
+  visited.resize(alloc);
   for (ui8 z : setA) {
     int x = z-upper;
     x = max(x, 0);
@@ -59,7 +64,6 @@ ui bruteForce(vector<ui8>& setA, vector<ui8>& setB) {
       }
     }
   }
-  delete[] visited;
   return size;
 }
 
@@ -77,7 +81,7 @@ ui logarithmic(vector<ui8>& setA, vector<ui8>& setB) {
     sort(setA.begin(), setA.end());
 
     vector<ui8>::iterator currentLowest = setB.begin();
-    // find start number
+    // find lowest possible k, such that k is in range of b
     int k = *currentLowest-lower;
     k = max(k, 0);
     vector<ui8>::iterator currentIndex = lower_bound(setA.begin(), setA.end(), k);
@@ -122,17 +126,22 @@ int main() {
 
   while(cin >> pr >> pl) v.push_back({pr, pl});
 
-  for (pair<ui,ui> entry : v) {
+  auto ws = std::chrono::system_clock::now();
+  time_t ss = time(NULL);
+  for ([[maybe_unused]]pair<ui,ui> entry : v) {
     vector<ui8> setA, setB;
     loadFile(entry.first, setA);
     loadFile(entry.second, setB);
 
-    log.push_back(logarithmic(setA, setB));
+    //log.push_back(logarithmic(setA, setB));
     bf.push_back(bruteForce(setA, setB));
   }
 
-  for (size_t i = 0; i < v.size(); ++i) {
-    cout << "Intersection size for files F" << v[i].first << " and F" << v[i].second << endl;
-    cout << "Naive : " << bf[i] << " better " << log[i] << endl;
-  }
+  time_t se = time(NULL);
+  auto we = std::chrono::system_clock::now();
+  auto wd = we-ws;
+
+  cout << "Wallclock time was = " << wd.count() << endl;
+  cout << "System time was = " << se-ss << endl;
+  cout << "Memory usage = " << getMemoryUsage() << endl;
 }
