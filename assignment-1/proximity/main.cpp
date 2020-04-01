@@ -15,16 +15,9 @@ const string DIR = "data";
 // Notes use segment tree to count running sum in n log n algorithm
 
 // cin cannot read multiple digits if the vars are a type uint8_t since uint is typedef for char
-ui upper, lower, pr, pl;
-vector<pair<ui,ui>> v;
-vector<ui8> setA;
-vector<ui8> setB;
-// final result
-vector<ui> result;
+ui upper, lower;
+// array values will be set to false when allocated on the heap
 bool dt[256];
-
-int naiveCount;
-bool visited[256];
 
 void loadFile(ui code, vector<ui8>& buffer) {
   string filename = DIR+"/"+"F"+to_string(code)+".vb";
@@ -48,7 +41,12 @@ void printV(vector<ui8>& w) {
   cout << endl;
 }
 
-void naiveSolution() {
+ui bruteForce(vector<ui8>& setA, vector<ui8>& setB) {
+  ui size = 0;
+  ui alloc = (*setB.rbegin())+1;
+  // we could assume the size is at max 256
+  bool* visited = new bool[alloc];
+  memset(visited, false, alloc*sizeof(*visited));
   for (ui8 z : setA) {
     int x = z-upper;
     x = max(x, 0);
@@ -56,24 +54,36 @@ void naiveSolution() {
     y = min(y, 255);
     for (ui8 u : setB) {
       if (u >= x && u <= y && !visited[u]) {
-        naiveCount++;
+        size++;
         visited[u] = true;
       }
     }
   }
+  delete[] visited;
+  return size;
 }
 
-void solution() {
+// time complexity O(n(m log m))
+// where 
+// n = number of pairs
+// m = size of data in files
+// 1 <= m <= 255
+// Since m is almost guaranteed to be 255 
+// we can assume a time complexity of O(n)
+ui logarithmic(vector<ui8>& setA, vector<ui8>& setB) {
+    ui size = 0;
+
     sort(setB.begin(), setB.end());
     sort(setA.begin(), setA.end());
 
     vector<ui8>::iterator currentLowest = setB.begin();
-    vector<ui8>::iterator currentIndex = setA.begin();
-    ui size = 0;
+    // find start number
+    int k = *currentLowest-lower;
+    k = max(k, 0);
+    vector<ui8>::iterator currentIndex = lower_bound(setA.begin(), setA.end(), k);
 
     while (currentLowest != setB.end() && currentIndex != setA.end()) {
       ui8 z = *currentIndex;
-      currentIndex++;
 
       int x = z-upper;
       x = max(x, (int)*currentLowest);
@@ -87,41 +97,42 @@ void solution() {
       if (upperR == setB.end()) upperR = setB.end()-1;
 
       if (*upperR > y) upperR--; // we have gone past the upper limit
-      if (*lowerR > y || *upperR < x) continue; // no possible numbers within this range
 
       size += 1+upperR-lowerR;
 
       currentLowest = upperR+1;
+
       // skip numbers lower than currentLowest
-      int k = *currentLowest-lower;
+      k = *currentLowest-lower;
       k = max(k, 0);
-      currentIndex = lower_bound(currentIndex, setA.end(), *currentLowest-lower);
+      currentIndex = lower_bound(currentIndex, setA.end(), k);
     }
 
-    result.push_back(size);
+    return size;
 }
 
 int main() {
+  vector<pair<ui,ui>> v;
+  // final result
+  vector<ui> log, bf;
+  
+  ui pr, pl;
+
   cin >> upper >> lower;
 
   while(cin >> pr >> pl) v.push_back({pr, pl});
 
-  // time complexity O(n(m log m))
-  // where 
-  // n = number of pairs
-  // m = size of data in files
-  // 1 <= m <= 255
-  // overall worst complexity n*255(log 255)
   for (pair<ui,ui> entry : v) {
+    vector<ui8> setA, setB;
     loadFile(entry.first, setA);
     loadFile(entry.second, setB);
 
-    naiveSolution();
-    solution();
+    log.push_back(logarithmic(setA, setB));
+    bf.push_back(bruteForce(setA, setB));
   }
 
   for (size_t i = 0; i < v.size(); ++i) {
     cout << "Intersection size for files F" << v[i].first << " and F" << v[i].second << endl;
-    cout << "Naive : " << naiveCount << " better " << result[i] << endl;
+    cout << "Naive : " << bf[i] << " better " << log[i] << endl;
   }
 }
