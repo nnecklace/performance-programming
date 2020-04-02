@@ -4,15 +4,17 @@
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <stdexcept>
 #include <experimental/filesystem>
-
-typedef long long ll;
 
 using namespace std;
 using namespace chrono;
 
 // only needed for macos
 namespace fs = std::experimental::filesystem;
+
+typedef long long ll;
+typedef void(*commandLineFunction)(string& path);
 
 // Found on stackoverflow: https://stackoverflow.com/questions/1543157/how-can-i-find-out-how-much-memory-my-c-app-is-using-on-the-mac
 long getMemoryUsage() {
@@ -21,6 +23,10 @@ long getMemoryUsage() {
     return usage.ru_maxrss; // bytes
   else
     return 0;
+}
+
+string getFilename(string& filename) {
+  return filename.substr(filename.find_last_of("/")+1);
 }
 
 vector<uint8_t> vByteEncode(ll numberBlock) {
@@ -67,8 +73,10 @@ ll vByteDecode(vector<uint8_t> numberStream) {
 
 void encode(string& filename) {
   ifstream input(filename, ios::binary);
-  ofstream output("output/"+(filename.substr(filename.find_last_of("/")+1))+".vb", ios::binary);
+  ofstream output("output/"+getFilename(filename)+".vb", ios::binary);
+  
   ll numberBytes;
+
   while(input.read(reinterpret_cast<char*>(&numberBytes), sizeof(numberBytes))) {
     vector<uint8_t> result = vByteEncode(numberBytes);
     output.write((char*)&result[0], result.size());
@@ -83,7 +91,7 @@ void decode(string& filename) {
   uint8_t numberBytes;
 
   ifstream input(filename, ios::binary);
-  ofstream output("output/"+(filename.substr(filename.find_last_of("/")+1))+".dec", ios::binary | ios::app);
+  ofstream output("output/"+getFilename(filename)+".dec", ios::binary | ios::app);
 
   while(input.read(reinterpret_cast<char*>(&numberBytes), sizeof(numberBytes))) {
     byteStream.push_back(numberBytes);
@@ -99,7 +107,7 @@ void decode(string& filename) {
 
 void sortFile(string& filename) {
   ifstream input(filename, ios::binary);
-  ofstream output("output/"+(filename.substr(filename.find_last_of("/")+1))+".sorted.vb", ios::binary);
+  ofstream output("output/"+getFilename(filename)+".sorted.vb", ios::binary);
 
   ll numberBytes;
   vector<ll> v;
@@ -120,6 +128,14 @@ void sortFile(string& filename) {
   output.close();
 }
 
+commandLineFunction getCmdFunction(string& cmd) {
+  if (cmd == "--encode") return encode;
+  else if (cmd == "--decode") return decode;
+  else if (cmd == "--sort") return sortFile;
+
+  throw invalid_argument("Unknown command passed");
+}
+
 int main([[maybe_unused]]int argc, char** args) {
   if (!args[1] || !args[2]) {
     cout << "Provide a file and a command" << endl;
@@ -128,18 +144,23 @@ int main([[maybe_unused]]int argc, char** args) {
   string cmd = args[1];
   string filename = args[2];
 
+  commandLineFunction cmdFn; 
+
+  try {
+    cmdFn = getCmdFunction(cmd);
+  } catch (invalid_argument& excep) {
+    cout << excep.what() << endl;
+    return 0;
+  }
+
   if (fs::is_directory(fs::status(filename))) {
     auto ws = system_clock::now();
     time_t ss = time(NULL);
 
     for (auto file : fs::directory_iterator(filename)) {
       if (!fs::is_regular_file(fs::status(file))) continue;
-
       string path = file.path();
-
-      if (cmd == "encode") encode(path);
-      if (cmd == "decode") decode(path);
-      if (cmd == "sort") sortFile(path);
+      cmdFn(path);
     }
 
     time_t se = time(NULL);
@@ -155,9 +176,7 @@ int main([[maybe_unused]]int argc, char** args) {
 
   auto ws = system_clock::now();
   time_t ss = time(NULL);
-  if (cmd == "encode") encode(filename);
-  if (cmd == "decode") decode(filename);
-  if (cmd == "sort") sortFile(filename);
+  cmdFn(filename);
   time_t se = time(NULL);
   auto we = system_clock::now();
 
