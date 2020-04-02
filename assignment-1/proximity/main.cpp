@@ -133,8 +133,8 @@ int main() {
     loadFile(entry.first, setA);
     loadFile(entry.second, setB);
 
-    //log.push_back(logarithmic(setA, setB));
-    bf.push_back(bruteForce(setA, setB));
+    log.push_back(logarithmic(setA, setB));
+    //bf.push_back(bruteForce(setA, setB));
   }
 
   time_t se = time(NULL);
@@ -144,4 +144,8 @@ int main() {
   cout << "Wallclock time was = " << wd.count() << endl;
   cout << "System time was = " << se-ss << endl;
   cout << "Memory usage = " << getMemoryUsage() << endl;
+
+  for (size_t i = 0; i < v.size(); ++i) {
+    cout << i+1 << " " << bf[i] << endl;
+  }
 }
