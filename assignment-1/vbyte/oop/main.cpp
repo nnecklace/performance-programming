@@ -3,6 +3,7 @@
 #include <fstream>
 #include <chrono>
 #include <ctime>
+#include <stdexcept>
 #include <experimental/filesystem>
 #include "codec.h"
 
@@ -27,25 +28,10 @@ long getMemoryUsage() {
 const string ENCODE = "--encode";
 const string DECODE = "--decode";
 const string SORT = "--sort";
-
-// Operations
-// DIR and FILE are reserved
-const string F = "--file";
-const string D = "--all";
-
 const string OUTDIR = "--output";
 
 // This is only needed for macos 
 namespace fs = std::experimental::filesystem;
-
-// Helper
-string getExt(string& cmd) {
-  if (cmd == ENCODE) return ".vb";
-  if (cmd == DECODE) return ".dec";
-  if (cmd == SORT) return ".sorted.vb";
-
-  return "";
-}
 
 template<typename T, enable_if_t<is_unsigned<T>::value>* = nullptr>
 void encode(File& inFile, File& outFile, Codec& codec) {
@@ -97,68 +83,65 @@ string getOutDir(char** args) {
   return "";
 }
 
-commandLineFunction getCmdFunction(string cmd) {
+commandLineFunction getCmdFunction(string& cmd) {
   if (cmd == ENCODE) return encode<ll>;
   if (cmd == DECODE) return decode<ll>;
-  
-  return sort<ll>;
+  if (cmd == SORT) return sort<ll>;
+
+  throw invalid_argument("Unknown command passed");
 }
 
-// ./main --encode --all input --output output 
-// ./main --encode --file F0 --output output
+string getExt(string& cmd) {
+  if (cmd == ENCODE) return ".vb";
+  if (cmd == DECODE) return ".dec";
+  if (cmd == SORT) return ".sorted.vb";
+
+  return "";
+}
+
+// ./main --encode input --output output 
+// ./main --encode F0 --output output
 int main([[maybe_unused]]int argc, char** args) {
   if (!args[1] || !args[2]) {
-    cout << "Please provide a command and an operation"  << endl;
+    cout << "Please provide a command and a file or folder"  << endl;
 
-    return 1;
+    return 0;
   } 
 
   string cmd = args[1];
+  string inDir = args[2];
+  string outDir = getOutDir(args);
+  string ext;
 
-  if (cmd != ENCODE && cmd != DECODE && cmd != SORT) {
-    cout << "Please provide a valid command" << endl;
-
-    return 1;
-  }
-
-  if (!args[3]) {
-    cout << "Please provide a file or directory" << endl;
-
-    return 1;
-  }
-
-  string operation = args[2];
-  commandLineFunction cmdFn = getCmdFunction(cmd);
-  string ext = getExt(cmd);
+  commandLineFunction cmdFn;
   Codec codec;
 
-  if (operation == D) {
-    string inDir = args[3];
-    string outDir = getOutDir(args);
-
-    if (fs::is_directory(fs::status(inDir))) {
-      auto ws = system_clock::now();
-      time_t ss = time(NULL);
-      each<ll>(inDir, outDir, ext, cmdFn, codec);
-      time_t se = time(NULL);
-      auto we = system_clock::now();
-
-      auto wd = we-ws;
-      cout << "Wallclock time was = " << wd.count() << endl;
-      cout << "System time was = " << se-ss << endl;
-      cout << "Memory usage = " << getMemoryUsage() << endl;
-
-      return 0;
-    } else {
-      cout << inDir << " is not a directory!" << endl;
-      return 1;
-    }
+  try {
+    cmdFn = getCmdFunction(cmd);
+    ext = getExt(cmd);
+  } catch (invalid_argument& excep) {
+    cout << excep.what() << endl;
+    return 0;
   }
 
-  string fileArg = args[3];
-  string filename = fs::path(fileArg).filename();
-  string inPath = fs::path(fileArg).string();
-  string outPath = getOutDir(args)+filename+ext;
+  if (fs::is_directory(fs::status(inDir))) {
+    auto ws = system_clock::now();
+    time_t ss = time(NULL);
+    each<ll>(inDir, outDir, ext, cmdFn, codec);
+    time_t se = time(NULL);
+    auto we = system_clock::now();
+
+    auto wd = we-ws;
+    cout << "Wallclock time was = " << wd.count() << endl;
+    cout << "System time was = " << se-ss << endl;
+    cout << "Memory usage = " << getMemoryUsage() << endl;
+
+    return 0;
+  }
+
+  string filename = fs::path(inDir).filename();
+  string inPath = fs::path(inDir).string();
+  string outPath = outDir+filename+ext;
 
   File input(inPath, ios::in);
   File output(outPath, ios::out);

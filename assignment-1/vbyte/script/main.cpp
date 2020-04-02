@@ -43,7 +43,7 @@ vector<uint8_t> vByteEncode(ll numberBlock) {
   return bytes;
 }
 
-ll vByteDecode(vector<uint8_t> numberStream) {
+ll vByteDecode(vector<uint8_t>& numberStream) {
   ll numberBytes = 0;
   if (numberStream.size() == 1) {
     numberBytes = numberStream[0]-128;
@@ -51,7 +51,6 @@ ll vByteDecode(vector<uint8_t> numberStream) {
   }
 
   numberBytes += numberStream[0];
-  // might lead to bug?
   ll length = 8;
 
   for (size_t i = 1; i < numberStream.size(); ++i) {
