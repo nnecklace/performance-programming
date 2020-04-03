@@ -1,8 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include <chrono>
-#include <ctime>
 #include <stdexcept>
 #include <experimental/filesystem>
 #include "codec.h"
@@ -10,19 +8,8 @@
 using namespace std;
 using namespace codec;
 using namespace file;
-using namespace chrono;
 
 typedef void(*commandLineFunction)(File& in, File& ou, Codec& c);
-
-// Found on stackoverflow: https://stackoverflow.com/questions/1543157/how-can-i-find-out-how-much-memory-my-c-app-is-using-on-the-mac
-long getMemoryUsage() {
-  struct rusage usage;
-  if(0 == getrusage(RUSAGE_SELF, &usage)) {
-    return usage.ru_maxrss; // bytes
-  } else {
-    return 0;
-  }
-}
 
 // Commands
 const string ENCODE = "--encode";
@@ -125,16 +112,7 @@ int main([[maybe_unused]]int argc, char** args) {
   }
 
   if (fs::is_directory(fs::status(inDir))) {
-    auto ws = system_clock::now();
-    time_t ss = time(NULL);
     each<ll>(inDir, outDir, ext, cmdFn, codec);
-    time_t se = time(NULL);
-    auto we = system_clock::now();
-
-    auto wd = we-ws;
-    cout << "Wallclock time was = " << wd.count() << endl;
-    cout << "System time was = " << se-ss << endl;
-    cout << "Memory usage = " << getMemoryUsage() << endl;
 
     return 0;
   }
@@ -146,16 +124,7 @@ int main([[maybe_unused]]int argc, char** args) {
   File input(inPath, ios::in);
   File output(outPath, ios::out);
 
-  auto ws = system_clock::now();
-  time_t ss = time(NULL);
   cmdFn(input, output, codec);
-  time_t se = time(NULL);
-  auto we = system_clock::now();
-
-  auto wd = we-ws;
-  cout << "Wallclock time was = " << wd.count() << endl;
-  cout << "System time was = " << se-ss << endl;
-  cout << "Memory usage = " << getMemoryUsage() << endl;
 
   output.close();
   input.close();

@@ -2,28 +2,16 @@
 #include <vector>
 #include <fstream>
 #include <algorithm>
-#include <chrono>
-#include <ctime>
 #include <stdexcept>
 #include <experimental/filesystem>
 
 using namespace std;
-using namespace chrono;
 
-// only needed for macos
+// only needed for c++14
 namespace fs = std::experimental::filesystem;
 
 typedef long long ll;
 typedef void(*commandLineFunction)(string& path);
-
-// Found on stackoverflow: https://stackoverflow.com/questions/1543157/how-can-i-find-out-how-much-memory-my-c-app-is-using-on-the-mac
-long getMemoryUsage() {
-  struct rusage usage;
-  if(0 == getrusage(RUSAGE_SELF, &usage))
-    return usage.ru_maxrss; // bytes
-  else
-    return 0;
-}
 
 string getFilename(string& filename) {
   return filename.substr(filename.find_last_of("/")+1);
@@ -153,35 +141,15 @@ int main([[maybe_unused]]int argc, char** args) {
   }
 
   if (fs::is_directory(fs::status(filename))) {
-    auto ws = system_clock::now();
-    time_t ss = time(NULL);
-
     for (auto file : fs::directory_iterator(filename)) {
       if (!fs::is_regular_file(fs::status(file))) continue;
       string path = file.path();
       cmdFn(path);
     }
 
-    time_t se = time(NULL);
-    auto we = system_clock::now();
-
-    auto wd = we-ws;
-    cout << "Wallclock time was = " << wd.count() << endl;
-    cout << "System time was = " << se-ss << endl;
-    cout << "Memory usage = " << getMemoryUsage() << endl;
-
     return 0;
   }
 
-  auto ws = system_clock::now();
-  time_t ss = time(NULL);
   cmdFn(filename);
-  time_t se = time(NULL);
-  auto we = system_clock::now();
-
-  auto wd = we-ws;
-  cout << "Wallclock time was = " << wd.count() << endl;
-  cout << "System time was = " << se-ss << endl;
-  cout << "Memory usage = " << getMemoryUsage() << endl;
 }
 

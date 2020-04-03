@@ -7,6 +7,8 @@ There are two solutions to this task. One "high performance" script, and one ove
 
 If compiling for C++14 the `-lstdc++fs` flag needs to be added to the compiler. This is because the program uses `<experimental/filesystem>` header file.  The header file will only be included with the linking flag. If compiling for C++17 the linking flag can be omitted. However, the header file should be changed to `<filesystem>` and the also the `namespace fs = std::experimental::filesystem;` should be changed to `namespace fs = std::filesystem;`
 
+Please note that on turso the vbyte program will only work with C++17.
+
 ## Script
 
 The script version is located in the `vbyte/script` folder. 
