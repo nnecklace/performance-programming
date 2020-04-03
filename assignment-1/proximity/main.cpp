@@ -7,15 +7,6 @@
 #include <chrono>
 #include <ctime>
 
-long getMemoryUsage() {
-  struct rusage usage;
-  if(0 == getrusage(RUSAGE_SELF, &usage)) {
-    return usage.ru_maxrss; // bytes
-  } else {
-    return 0;
-  }
-}
-
 typedef uint8_t ui8; 
 typedef unsigned int ui;
 
@@ -140,9 +131,8 @@ int main() {
 
   cout << "Wallclock time was = " << wd.count() << endl;
   cout << "System time was = " << se-ss << endl;
-  cout << "Memory usage = " << getMemoryUsage() << endl;
 
   for (size_t i = 0; i < v.size(); ++i) {
-    cout << "intersection size for pairs " << v[i].first << " " <<  v[i].second << " is " << log[i] << endl;
+    cout << "Intersection size for pairs " << v[i].first << " " <<  v[i].second << " is " << log[i] << endl;
   }
 }
