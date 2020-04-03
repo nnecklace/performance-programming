@@ -136,7 +136,6 @@ int main() {
     log.push_back(logarithmic(setA, setB));
     //bf.push_back(bruteForce(setA, setB));
   }
-
   time_t se = time(NULL);
   auto we = std::chrono::system_clock::now();
   auto wd = we-ws;
@@ -146,6 +145,6 @@ int main() {
   cout << "Memory usage = " << getMemoryUsage() << endl;
 
   for (size_t i = 0; i < v.size(); ++i) {
-    cout << i+1 << " " << bf[i] << endl;
+    cout << "intersection size for pairs " << v[i].first << " " <<  v[i].second << " is " << log[i] << endl;
   }
 }

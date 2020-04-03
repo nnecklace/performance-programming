@@ -1,0 +1,422 @@
+
+# Assignment 1 VByte encoding
+
+There are two solutions to this task. One "high performance" script, and one over engineerd object oriented version. 
+Both use the same underlying encoding and decoding algorithm but differ in execution, structure, memory usage, and runtime. 
+The OOP version is meant to be more of a generic vbyte library. It can encode/decode any binary file with a given constant size.
+The default size is 64 bits. The script version is not so generic, it can only encode 64 bits and decode back to 64 bits.
+
+## Setup
+
+If compiling for C++14 the `-lstdc++fs` flag needs to be added to the compiler. This is because the program uses `<experimental/filesystem>` header file. 
+The header file will only be included with the linking flag. If compiling for C++17 the linking flag can be omitted. 
+However, the header file should be changed to `<filesystem>` and the also the `namespace fs = std::experimental::filesystem;` should be changed to `namespace fs = std::filesystem;`
+
+## Script
+
+The script version is located in the `vbyte/script` folder. 
+
+### Instructions
+
+Compiling C++17:
+```
+g++ -std=c++17 main.cpp -o main -O2
+```
+
+Compiling C++14
+```
+g++ -std=c++14 -lstdc++fs main.cpp -o main -O2
+```
+
+Running:
+```
+./main [command] [file|folder]
+```
+
+The available commands are `--encode`, `--decode`, `--sort`. If a folder is passed as the second argument, the program will perform the given command on all files in that folder.
+The results will all be written to a folder named `output`.
+
+Example:
+```
+./main --encode input/ 
+
+./main --decode encoded_data/F0.vb
+
+./main --sort input/F245
+```
+
+Statistics:
+```
+--- ENCODING
+Wallclock time was = 77942663000
+System time was = 78
+Memory usage = 1679360
+
+--- DECODING
+Wallclock time was = 34016727000
+System time was = 34
+Memory usage = 1665706
+
+--- SORTING
+Wallclock time was = 54965974000
+System time was = 55
+Memory usage = 19128320
+```
+
+## OOP
+
+The object oriented version is located in the `vbyte/oop` folder.
+
+### Instructions
+
+Compiling C++17:
+```
+g++ -std=c++17 main.cpp -o main -O2
+```
+
+Compiling C++14
+```
+g++ -std=c++14 -lstdc++fs main.cpp -o main -O2
+```
+
+Running:
+```
+./main [command] [file|folder] [path] [output] [path]
+```
+The available commands are `--encode`, `--decode`, `--sort`. You can either tell the program to encode a folder or file. 
+This is done with the `--file` or `--all` arguments, both arguments should immediatly be followed with a relative path for either file or folder.
+The last argument `--output` is optional. This argument should also immediatly be followed by a relative path to a folder that should be to output destination.
+Both paths need to point to an actual file or folder on the filesystem, otherwise the program will output an empty result.
+
+Examples:
+```
+./main --encode input/F0
+
+./main --sort input/ --output sorted_dst/
+
+./main --decode F120.vb --output decoded_dst/
+```
+
+Statistics:
+```
+--- ENCODING
+Wallclock time was = 143616415000
+System time was = 144
+Memory usage = 102470997 Bytes
+
+--- DECODING
+Wallclock time was = 44212250000
+System time was = 44
+Memory usage = 19630762 Bytes
+
+--- SORTING
+Wallclock time was = 143009340000
+System time was = 143
+Memory usage = 102869675 Bytes
+```
+
+## Comparison 
+
+### Compression algorithms
+
+Comparing the two solutions, we can see that both solutons's encoding and decoding perform at same level of compression. 
+The encoding algortihm always halves the size of the original file and decoding always decodes an encoded file back to the original size.
+Both sorting algorithms perform identically. The size of the sorted compression ranges between 1.2MB and 1.6MB. 
+The gap is most likely due to consecutive same range numbers in the original uncompressed files.
+
+### Runtime & Memory
+
+The runtimes can be seen in the under the statistics title. The statistics are calculated on a 10 run of each algorithm. The statistics include, wallclock time (measured in nano seconds), user time (measured in seconds), and peak memory usage.
+- Wall clock time -- the time measured between a task starts and a task finishes
+- User time -- real time measured between two intervals
+- Peak memory usage -- max amount of memory used by the process
+
+With peak memory usage, there was no consitent and reliable way of measuring this on MacOS. 
+I found two ways, both of which were somewhat in consistent but both returned similair results.
+
+1. Valgrind. `valgrind --tool=massif <binary>` Measures how much heap memory a program will use at maximum.
+2. Code snippet:
+```c++
+long getMemoryUsage() {
+    struct rusage usage;
+    if(0 == getrusage(RUSAGE_SELF, &usage)) {
+        return usage.ru_maxrss; // bytes
+    } else {
+        return 0;
+    }
+}
+``` 
+
+This code snippet was found: https://stackoverflow.com/questions/1543157/how-can-i-find-out-how-much-memory-my-c-app-is-using-on-the-mac
+The code snippet measures the maximum resident set of the process. Resident set meaning the size of page currently located in memory (RAM).
+In the statistics the memory usage refers to the resident set, resident set was more consitent throughout the tests.
+
+The runtime between the two solution is quite different. The script version is significantly faster, averging about 80-100 seconds less running time.
+The least significant difference is between the decoding solutions. Only a 10 second difference on average. The reason for this significant difference is due to poor file reading.
+The way to programs encodes the numbers is different. In the script version the program encodes numbers while at the same time it reads numbers to encode.
+In the OOP version, we first read all the numbers into a buffer, and then encode each number in the buffer. 
+```c++
+template<typename T, enable_if_t<is_unsigned<T>::value>*>
+vector<pair<vector<uint8_t>, size_t>> codec::Codec::encode(File& file) 
+{
+  T number;
+  vector<T> numberBuffer;
+  vector<pair<vector<uint8_t>, size_t>> encodedNumbers;
+  file.readAndPopulate<T>(number, sizeof(number), numberBuffer); // <--- read into buffer average wall clock time 50000000 (0.05 seconds)
+
+  for (size_t i = 0; i < numberBuffer.size(); ++i) { // <--- iterate over buffer
+    vector<uint8_t> encodedNumber = encodeVByte(numberBuffer[i]);
+    encodedNumbers.push_back({encodedNumber, encodedNumber.size()});
+  }
+  // average wall clock time 400000000 (0.4 seconds) This also happens to be the average time to encode one file on the script version
+  return encodedNumbers;
+}
+```
+This "double iteration" causes a spike of 0.35 seconds. This increase adds over time and it is the reason for poorer runtime on the OOP version.
+The slight increase in runtime during decoding can be attributed to the fact that in the OOP version all the numbers are first read into a buffer, then processed by the algorithm, and then finally written out to disk.
+This does add a slight overhead that can eventually be seen with the 8-10 second difference between the OOP version and the script version.
+
+---- Check memory
+
+# Assignment 2 Proximity intersection
+
+The proximity intersection program contains two different algorithms to calculate the proximity intersection size. First one is a naïve brute force `O(n^2)` algorithm, and the other is a more complicated `O(n(m log m))` algorithm.
+We also compare the two different solutions, running time and memory consumption.
+
+## Setup
+The program takes, as input, a file of integer pairs. There are two example files already provided: `test_input.txt`, `test_input2.txt`. However, more inputs can be generate with the `pair_generator` program.
+
+### Instructions
+
+Compiling
+```
+--- main
+g++ -std=c++14 main.cpp -o main -O2
+
+--- pair_generator
+g++ -std=c++14 pair_generator.cpp -o pair_generator -O2
+```
+
+Usage
+```
+./main < [filename]
+
+./pair_generator [lower] [upper] [limit] > [filename]
+```
+
+For `main` the filename refers to the file containing the list of pairs (first pair should be lower and upper bounds). For `pair_generator` lower, and upper refer to the lower and upper bound of the intersection, limit refers to the number of pairs we want to generate. And filename is the out filename.
+
+Examples
+```
+./main < test_input.txt
+
+./pair_generator > input.txt
+>2 1
+>500
+```
+
+Statistics
+```
+x = lower, y = upper 
+n = number of pairs
+
+x = 0
+y = 0
+n = 1
+// Log
+Wallclock time was = 135034000
+System time was = 1
+Memory usage = 1474560
+
+// Bruteforce
+Wallclock time was = 120972000
+System time was = 0
+Memory usage = 1474560
+
+x = 5
+y = 2
+n = 100
+// Log
+Wallclock time was = 11664761000                             
+System time was = 12
+Memory usage = 1527808
+
+// Bruteforce
+Wallclock time was = 11769867000                             
+System time was = 12
+Memory usage = 1540096  
+
+x = 12
+y = 4
+n = 500
+// Log
+Wallclock time was = 55549540000                             
+System time was = 55
+Memory usage = 1560576
+
+// Bruteforce
+Wallclock time was = 55683124000
+System time was = 56
+Memory usage = 1589248
+
+x = 2
+y = 1
+n = 1000
+// Log
+Wallclock time was = 109558293000
+System time was = 110
+Memory usage = 1601536
+
+// Bruteforce
+Wallclock time was = 115978136000
+System time was = 116
+Memory usage = 1609728
+``` 
+
+## Comparison
+
+Assumption would be that the `O(n log n)` algorithm would perform noticebly better than the `O(n^2)` algorithm. This was however not the case.
+The logarithmic solution only started to see some increase when the size of pairs was larger than 800. Even then, the bruteforce solution was from time to time faster than the logarithmic solution.
+I could not find a concrete reason way the bruteforce solution was faster, at times, than the logarithmic solution.
+My only possible explanation is that my logarithmic solution is quite slow with an 8 bit number range (0-255). Given a larger number range (32 bit?), and smaller set size for A and B, the logarithmic solution would be significantly faster than the bruteforce one.
+Since the encoded files include > 4 million 8 bit numbers, it is highly likely that all numbers between 0-255 are present in the set, this also sets the set sizes to 255.
+
+## Implementation
+
+The bruteforce solution doesn't need further explaining. However, the logarithmic one is much harder to understand.
+We start by sorting the input sets:
+```c++
+    std::sort(setB.begin(), setB.end());
+    std::sort(setA.begin(), setA.end());
+```
+
+We use two pointers to find all k's in A such that k is in range of b in B,
+`currentLowest` refers to the lowest possible number k has to be for k to be in range of b.
+`currentIndex` refers to the current k element in A.
+
+Then we find the lowest k in A such that k is in range of b in B. We can skip numbers we are certain cannot be in range.
+```c++
+    vector<ui8>::iterator currentLowest = setB.begin();
+    int k = *currentLowest-lower;
+    k = max(k, 0); // if k is smaller than 0
+    vector<ui8>::iterator currentIndex = lower_bound(setA.begin(), setA.end(), k);
+```
+
+Then we find all k's of A that are in range of b in B.
+```c++
+      int x = z-upper;
+      x = max(x, (int)*currentLowest);
+      int y = z+lower;
+      y = min(y, 255);
+
+      auto lowerR = lower_bound(currentLowest, setB.end(), x);
+      auto upperR = lower_bound(currentLowest, setB.end(), y);
+```
+
+Then we add all k's between the upper bound and lower bound.
+```c++
+    size += 1+upperR-lowerR;
+```
+
+Then we move the `currentLowest` pointer forward by one, and skip all k's in A that cannot be in range anymore.
+```c++
+    currentLowest = upperR+1;
+    currentIndex = lower_bound(currentIndex, setA.end(), k);
+```
+
+The overall time complexity for this solution is `O(n log n)` where `n` is the size of the sets.
+
+# Assignment 3 Exploratory
+
+1. Object oriented programming library vbyte library. (4-5). 
+For assignment 1 the majority of the implementation time went to exploring C++. Only used C++ briefly before this and I was really keen on learning more about this language.
+I thought that one good way to learn more about C++ was to compare it to another language I know quite well, in this case Java. 
+Java is an OOP language, so in this case I decided to try out C++ object oriented programming. The biggest difference I noticed was the small overhead of classes in C++ compared to Java.
+In Java instantiating a class can be quite slow, and they are always added to the heap. In C++ classes did add almost any overhead. And classes were only added to heap if you use the `new` operator.
+
+Using OOP added no benefit to the task, as can be seen ni my report. However, the amount of things I learned while doing it was more than enough of a reason the do it.
+Learning how classes are placed in memory, how to create methods (private, public, virtual), copy constructor and destructors, what the difference in using `new` is in perspective of memory management.
+
+I think this deserves 5 marks. Reasons include: 
+The time and effort put into the OOP solution was quite significant. 
+The amount things I learned about C++ was quite a large amount.
+This is a good base for learning future things about C++.
+
+These might not sound like significant things, hopefully you'll keep in mind that I am still a C++ beginner.
+
+2. Template programming and function pointers. (2-3)
+
+This is another language feature exploration set. Template programming and function pointers are said to be the most difficult and confusing features of C++.
+I thought this was a good opportunity to try these difficult and confusing features. In the vbyte OOP solution I used templates quite alot.
+When making the OOP solution I wanted to make sure that whoever used the "library" would not be able to read the unsigned integers of the vbyte files into signed integers.
+`template<typename T, enable_if_t<is_unsigned<T>::value>* = nullptr>` this template `enable_if_t` will make sure that no one passes signed integers to our codec class.
+We need this restriction since if you  read to a signed integer we will get an incorrect number. 
+```c++
+    codec.encode<int>(inFile) // wont compile
+    codec.encode<unsigned int>(inFile) // wll compile
+```
+Template variables can also be passed down to other functions, unlike java generics.
+
+Function pointes are also quite confusing and difficult to use. A function pointer, is like the name suggest a pointer to a function. 
+Function pointers also for functions to be stored in local variables. I used function pointers to determine at run time what encoding function to call.
+```c+++
+    typedef void(*commandLineFunction)(string& path);
+
+    commandLineFunction cmdFn;
+
+    cmdFn = getCmdFunction(cmd);
+```
+
+These are some difficult features that beginners shouldn't probably touch, but I was really interested in learning what is difficult to comprehend for experienced C++ developers.
+Template programming is a very large subject that sill needs more exploring,
+
+I feel that 3 marks would be suitable for this since this is definetly outside the scope of beginner features of C++, and this shows that I an interested in learning the complex topics of the language.
+
+3. Comparing two solutions for vbyte.(3-4)
+
+For this I wrote, as mentioned before, two solutions for the vbyte task. 
+It was interesting comparing a lightweight solution vs. an over engineerd OOP solution and see which one is performs better.
+Also the implementations were different. OOP solution reads the whole file into memory, then processes it, and then writes the processed file out to disk.
+The script version just reads one at a time and writes it immediatly to disk. I was surprised to see that reading the whole file into memory was much slower than reading one number at a time.
+There was a detailed description on why this happens in the task 1 report, so I'm not going to repeat it here.
+
+This was mentioned as a suggestion for an exploratory task, which I felt would be interesing in implementing and comparing results.
+Task spec mentions that this kind of task is worth 4 marks.
+
+4. Pair test data generator.(1-2)
+
+Another task which was mentioned in the spec was a test data generator. 
+This test data generator doesn't generate test set data, instead it generates random test pairs for the program.
+This was honestly not that difficult to implement, but still outside the scope of the task itself. 
+One interesting thing I learned while implementing this is that ints declared in the heap will have a default value of 0 while on the stack they might have a random number.
+
+1-2 Marks.
+
+5. Logarithmic implementation for proximity intersection.(4-5)
+
+This task along with the OOP exploring took most of the time out of everything in this assignment. 
+In the proximity intersection task I wanted to create a faster and better algorithm than a `O(n^2)` bruteforce solution. 
+I realised that number skipping could improve the overall time complexity. 
+So instead of computing the same numbers over and over again we would just skip to a number we knew would be in range.
+This was only possible to implement if the numbers were in sorted order:
+```c++
+    sort(setB.begin(), setB.end());
+    sort(setA.begin(), setA.end());
+```
+
+At this point finding the numbers in range is easily done with binary search.
+```c++
+      auto lowerR = lower_bound(currentLowest, setB.end(), x);
+      auto upperR = lower_bound(currentLowest, setB.end(), y);
+```
+`lower_bound` is a binary search that finds the first number k, such the there a(i) >= k.  
+
+The more detailed explanation can be read in the task report. 
+However, this algorithm, while having a better time complexity, still didn't significantly improving the runtime for the program.
+This is also explained in the task report. 
+
+This took surprisingly difficult to implement and quite time consuming. I was very happy to learn about `lower_bound`, `upper_bound` and `find`.
+I was happy to learn that sets and maps in C++ don't use hasing but instead are sorted and all operations are run in `O(log n)` time. Even though I ended up using vector instead of sets or maps.
+
+This is overall a better implementation for proximity intersection task. This kind of task is also mentioned twice in the example exploratory tasks, and rated high > 3 marks.
+I would argue that 4 marks is a reasonable amount for this kind of task.
