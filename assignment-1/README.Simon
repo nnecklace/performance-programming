@@ -83,8 +83,7 @@ Running:
 ```
 ./main [command] [file|folder] [path] [output] [path]
 ```
-The available commands are `--encode`, `--decode`, `--sort`. You can either tell the program to encode a folder or file. 
-This is done with the `--file` or `--all` arguments, both arguments should immediatly be followed with a relative path for either file or folder.
+The available commands are `--encode`, `--decode`, `--sort`. Commands should immediatly be followed with a relative path for either file or folder.
 The last argument `--output` is optional. This argument should also immediatly be followed by a relative path to a folder that should be to output destination, note the output folder needs to have a forward slash / otherwise the writing will fail.
 Both paths need to point to an actual file or folder on the filesystem, otherwise the program will output an empty result.
 
@@ -119,20 +118,20 @@ Memory usage = 102869675 Bytes
 
 ### Compression algorithms
 
-Comparing the two solutions, we can see that both solutons's encoding and decoding perform at same level of compression. 
+Comparing the two solutions, we can see that both solutions's encoding and decoding perform at same level of compression. 
 The encoding algortihm always halves the size of the original file and decoding always decodes an encoded file back to the original size.
 Both sorting algorithms perform identically. The size of the sorted compression ranges between 1.2MB and 1.6MB. 
 The gap is most likely due to consecutive same range numbers in the original uncompressed files.
 
 ### Runtime & Memory
 
-The runtimes can be seen in the under the statistics title. The statistics are calculated on a 10 run of each algorithm. The statistics include, wallclock time (measured in nano seconds), user time (measured in seconds), and peak memory usage.
+The runtimes can be seen in the under the statistics title. The statistics are calculated average based on a 10 run of each algorithm. The statistics include, wallclock time (measured in nano seconds), user time (measured in seconds), and peak memory usage.
 - Wall clock time -- the time measured between a task starts and a task finishes
 - User time -- real time measured between two intervals
 - Peak memory usage -- max amount of memory used by the process
 
 With peak memory usage, there was no consitent and reliable way of measuring this on MacOS. 
-I found two ways, both of which were somewhat in consistent but both returned similair results.
+I found two ways, both of which were somewhat inconsistent but both returned similair results.
 
 1. Valgrind. `valgrind --tool=massif <binary>` Measures how much heap memory a program will use at maximum.
 2. Code snippet:
@@ -149,9 +148,9 @@ long getMemoryUsage() {
 
 This code snippet was found: https://stackoverflow.com/questions/1543157/how-can-i-find-out-how-much-memory-my-c-app-is-using-on-the-mac
 The code snippet measures the maximum resident set of the process. Resident set meaning the size of page currently located in memory (RAM).
-In the statistics the memory usage refers to the resident set, resident set was more consitent throughout the tests.
+In the statistics the memory usage refers to the resident set, resident set was more consitent throughout the tests. *Note* this code snippet only works on MacOS!
 
-The runtime between the two solution is quite different. The script version is significantly faster, averging about 80-100 seconds less running time.
+The runtime between the two solutions is quite different. The script version is significantly faster, averging about 80-100 seconds less running time.
 The least significant difference is between the decoding solutions. Only a 10 second difference on average. The reason for this significant difference is due to poor file reading.
 The way to programs encodes the numbers is different. In the script version the program encodes numbers while at the same time it reads numbers to encode.
 In the OOP version, we first read all the numbers into a buffer, and then encode each number in the buffer. 
@@ -172,12 +171,9 @@ vector<pair<vector<uint8_t>, size_t>> codec::Codec::encode(File& file)
   return encodedNumbers;
 }
 ```
-This "double iteration" causes a spike of 0.35 seconds. This increase adds over time and it is the reason for poorer runtime on the OOP version.
-The slight increase in runtime during decoding can be attributed to the fact that in the OOP version all the numbers are first read into a buffer, then processed by the algorithm, and then finally written out to disk.
-This does add a slight overhead that can eventually be seen with the 8-10 second difference between the OOP version and the script version.
+This "double iteration" causes a spike of 0.35 seconds. This increase adds over time and it is the reason for poorer runtime on the OOP version. The slight increase in runtime during decoding can be attributed to how decoding calls are made in the OOP version. It first calls a class member which then reads from file. The time increase wasn't large, only between 1-2 millisecond difference, however it seems to add overtime. The slight overhead can eventually be seen in the 8-10 second difference between the OOP version and the script version.
 
-The memory difference can be attributed to how the two versions work. The OOP encoding and sorting versions read in a whole file into memory and then processes it and writes out to disk.
-This is where the peak memory difference is at its highest.
+The memory difference can be attributed to how the two versions work. The OOP encoding and sorting versions read in a whole file into memory and then processes it and writes out to disk. This is where the peak memory difference is at its highest.
 
 In conclusion I can say that it is both more memory efficient and faster to read one byte at a time.
 
