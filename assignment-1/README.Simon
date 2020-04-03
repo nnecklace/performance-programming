@@ -85,14 +85,14 @@ Running:
 ```
 The available commands are `--encode`, `--decode`, `--sort`. You can either tell the program to encode a folder or file. 
 This is done with the `--file` or `--all` arguments, both arguments should immediatly be followed with a relative path for either file or folder.
-The last argument `--output` is optional. This argument should also immediatly be followed by a relative path to a folder that should be to output destination.
+The last argument `--output` is optional. This argument should also immediatly be followed by a relative path to a folder that should be to output destination, note the output folder needs to have a forward slash / otherwise the writing will fail.
 Both paths need to point to an actual file or folder on the filesystem, otherwise the program will output an empty result.
 
 Examples:
 ```
 ./main --encode input/F0
 
-./main --sort input/ --output sorted_dst/
+./main --sort input/ --output sorted_dst/ // <-- output needs to have forward slash
 
 ./main --decode F120.vb --output decoded_dst/
 ```
@@ -176,7 +176,10 @@ This "double iteration" causes a spike of 0.35 seconds. This increase adds over 
 The slight increase in runtime during decoding can be attributed to the fact that in the OOP version all the numbers are first read into a buffer, then processed by the algorithm, and then finally written out to disk.
 This does add a slight overhead that can eventually be seen with the 8-10 second difference between the OOP version and the script version.
 
----- Check memory
+The memory difference can be attributed to how the two versions work. The OOP encoding and sorting versions read in a whole file into memory and then processes it and writes out to disk.
+This is where the peak memory difference is at its highest.
+
+In conclusion I can say that it is both more memory efficient and faster to read one byte at a time.
 
 # Assignment 2 Proximity intersection
 
