@@ -23,8 +23,6 @@ using namespace std;
 
 const string DIR = "data";
 
-// Notes use segment tree to count running sum in n log n algorithm
-
 // cin cannot read multiple digits if the vars are a type uint8_t since uint is typedef for char
 ui upper, lower;
 // array values will be set to false when allocated on the heap
