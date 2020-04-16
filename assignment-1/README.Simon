@@ -1,4 +1,8 @@
 
+All tasks have an input or data folder with a handful of the binary (F*) files. All binary files are not included as that would make this submission huge.
+
+Github link: https://github.com/nnecklace/performance-programming
+
 # Assignment 1 VByte encoding
 
 There are two solutions to this task. One "high performance" script, and one over engineerd object oriented version. Both use the same underlying encoding and decoding algorithm but differ in execution, structure, memory usage, and runtime. The OOP version is meant to be more of a generic vbyte library. It can encode/decode any binary file with a given constant size. The default size is 64 bits. The script version is not so generic, it can only encode 64 bits and decode back to 64 bits.
@@ -174,6 +178,9 @@ The proximity intersection program contains two different algorithms to calculat
 Default algorithm is logarithmic, if you want to try out bruteforce, comment out the logarithmic algorithm and add the correct vector in printing of intersections sizes. Finally recompile.
 
 ## Setup
+
+Please note that this program expects that the `data` folder includes all 245 vbyte encoded binary files. The data folder includes 20 of them just for ease of testing. The test pairs provided include pairs larger than 2 and running the program with them can lead to unexpected results.
+
 The program takes, as input, a file of integer pairs. There are a few example files already provided: `n_1.txt`, `n_100.txt`, `n_500.txt`, and `n_1000.txt`. However, more inputs can be generate with the `pair_generator` program.
 
 ### Instructions

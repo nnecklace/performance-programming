@@ -61,7 +61,7 @@ ll vByteDecode(vector<uint8_t>& numberStream) {
 void encode(string& filename) {
   ifstream input(filename, ios::binary);
   ofstream output("output/"+getFilename(filename)+".vb", ios::binary);
-  
+
   ll numberBytes;
 
   while(input.read(reinterpret_cast<char*>(&numberBytes), sizeof(numberBytes))) {
