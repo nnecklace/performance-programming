@@ -6,15 +6,16 @@ typedef unsigned long long ull;
 class BitArray {
     private:
         ull* sequence;
-        uint8_t* sum_table;
+        ull* sum_table;
         const size_t size;
     public:
         BitArray(ull n);
-        BitArray();
+        BitArray(); // FIXME: Can lead to undefined behaviour
         ~BitArray();
         ull get(const ull nth) const;
         void set(ull nth, ull i);
         ull check(const ull block); // TODO: Remove!
+        void check(); // TODO: Remove!
         ull sum (const ull i) const;
         void compact();
         friend std::istream& operator>>(std::istream& input, const BitArray& b);
@@ -24,7 +25,7 @@ class BitArray {
 BitArray::BitArray(ull n) : size(((n+63)/64)+1)
 {
     sequence = new ull[size];
-    sum_table = new uint8_t[size];
+    sum_table = new ull[size];
     std::fill(sequence, sequence+size, 0);
     std::fill(sum_table, sum_table+size, 0);
 }
@@ -47,16 +48,11 @@ void BitArray::set(ull nth, ull i)
 
 ull BitArray::sum(const ull nth) const
 {
-    // incase we try to access illegal bits
-    if (nth >= size) {
-        return sum_table[size-1];
-    }
-
     if (nth < 63) {
         return __builtin_popcountl(sequence[0]<<(63-nth));
     }
 
-    // ull incase we want to search for the sum up to some insane number, like 69 000 000
+    // ull incase we want to search for the sum up to some insane number, like MAX_INT
     ull block = nth>>6;
     return sum_table[block-1]+__builtin_popcountl(sequence[block]<<(63-(nth&63)));
 }
@@ -83,4 +79,12 @@ std::ostream& operator<<(std::ostream& output, const BitArray& b)
 ull BitArray::check(ull block)
 {
     return sequence[block];
+}
+
+void BitArray::check() 
+{
+    std::cout << "size " << size << std::endl;
+    for (size_t i = 0; i < size; ++i) {
+        std::cout << "Checking [" << i+1 << "] " << (int)sum_table[i] << std::endl;
+    }
 }
