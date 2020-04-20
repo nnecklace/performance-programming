@@ -49,7 +49,7 @@ void test1() {
 }
 
 void test2() {
-    int n, m;
+    unsigned long long n, m;
     vector<int> bits;
 
     cin >> n;
@@ -62,7 +62,7 @@ void test2() {
 
     mt19937 random_value(random_device{}());
     uniform_int_distribution<int> hat(0,n);
-    for (int i = 0; i < m; ++i) {
+    for (unsigned long long i = 0; i < m; ++i) {
         bits[i] = hat(random_value);
     }
 
@@ -72,7 +72,7 @@ void test2() {
 
     ba->compact();
 
-    ba->check();
+    //ba->check();
     auto now = std::chrono::high_resolution_clock::now();
     cout << "Sum up to 1 " << ba->sum(1) << endl;
     cout << "Sum up to 5 " << ba->sum(5) << endl;
