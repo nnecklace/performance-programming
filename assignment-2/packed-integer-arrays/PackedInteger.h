@@ -1,5 +1,4 @@
-#include <iostream>
-#include <bitset>
+#include <algorithm>
 
 typedef unsigned long long ull;
 

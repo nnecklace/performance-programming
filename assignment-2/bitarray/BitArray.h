@@ -1,31 +1,26 @@
-#include <iostream>
+#include <algorithm>
 
 typedef unsigned long long ull;
 
-// TODO: Create template for bit sizes
 class BitArray 
 {
 private:
     ull* sequence;
     ull* sum_table;
     const size_t size;
+    const size_t sum_size;
 public:
     BitArray(ull n);
-    BitArray(); // FIXME: Can lead to undefined behaviour
     ~BitArray();
     ull get(const ull nth) const;
     void set(ull nth, ull i);
     ull check(const ull block); // TODO: Remove!
-    void check(); // TODO: Remove!
     ull sum (const ull i) const;
     void compact();
-    friend std::istream& operator>>(std::istream& input, const BitArray& b);
-    friend std::ostream& operator<<(std::ostream& output, const BitArray& b);
 };
 
-BitArray::BitArray(ull n) : size(n/64+1)
+BitArray::BitArray(ull n) : size(n/64+1), sum_size(n/128+1)
 {
-    unsigned int sum_size = n/128+1;
     sequence = new ull[size];
     sum_table = new ull[sum_size];
     std::fill(sequence, sequence+size, 0);
@@ -72,26 +67,8 @@ void BitArray::compact()
     }
 }
 
-std::istream& operator>>(std::istream& input, const BitArray& b)
-{
-    return input;
-}
-
-std::ostream& operator<<(std::ostream& output, const BitArray& b)
-{
-    return output;
-}
-
 // TODO: Remove! Only used for debugging
 ull BitArray::check(ull block)
 {
     return sequence[block];
-}
-
-void BitArray::check() 
-{
-    std::cout << "size " << size << std::endl;
-    for (size_t i = 0; i < size/2; ++i) {
-        std::cout << "Checking [" << i+1 << "] " << (int)sum_table[i] << std::endl;
-    }
 }
