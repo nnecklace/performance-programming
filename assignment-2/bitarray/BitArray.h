@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 
 typedef unsigned long long ull;
 
@@ -14,7 +15,6 @@ public:
     ~BitArray();
     ull get(const ull nth) const;
     void set(ull nth, ull i);
-    ull check(const ull block); // TODO: Remove!
     ull sum (const ull i) const;
     void compact();
 };
@@ -35,12 +35,12 @@ BitArray::~BitArray()
 
 ull BitArray::get(ull nth) const
 {
-    return sequence[nth/64]>>(nth&63) & 1;
+    return sequence[nth>>6]>>(nth&63) & 1;
 }
 
 void BitArray::set(ull nth, ull i)
 {
-    sequence[nth/64] |= i<<(nth&63);
+    sequence[nth>>6] |= i<<(nth&63);
 }
 
 ull BitArray::sum(const ull nth) const
@@ -49,26 +49,15 @@ ull BitArray::sum(const ull nth) const
         return __builtin_popcountl(sequence[0]<<(63-nth));
     }
 
-    if (nth >= 64 && nth < 127) {
-        return __builtin_popcountl(sequence[0])+__builtin_popcountl(sequence[1]<<(127-nth));
-    }
-
     // ull incase we want to search for the sum up to some insane number, like MAX_INT
-    ull block = nth>>7;
-    ull section = nth>>6;
-    return sum_table[block-1]+__builtin_popcountl(sequence[section]<<(63-(nth&63)));
+    ull block = nth>>6;
+    return sum_table[block-1]+__builtin_popcountl(sequence[block]<<(63-(nth&63)));
 }
 
 void BitArray::compact()
 {
     sum_table[0] = __builtin_popcountl(sequence[0]);
-    for (size_t i = 1; i < size/2; ++i) {
-        sum_table[i] = __builtin_popcountl(sequence[i+(i-1)])+__builtin_popcountl(sequence[i+i])+sum_table[i-1];
+    for (size_t i = 1; i < size; ++i) {
+        sum_table[i] = __builtin_popcountl(sequence[i])+sum_table[i-1];
     }
-}
-
-// TODO: Remove! Only used for debugging
-ull BitArray::check(ull block)
-{
-    return sequence[block];
 }
