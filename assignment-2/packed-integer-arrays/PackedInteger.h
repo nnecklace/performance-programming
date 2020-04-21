@@ -1,9 +1,7 @@
 #include <algorithm>
+#include <iostream>
 
 typedef unsigned long long ull;
-
-// PackedInteger::Array<uint8_t>(10);
-// PackedInteger::List(10, 7);
 
 namespace PackedInteger 
 {
@@ -45,8 +43,8 @@ namespace PackedInteger
         // need a unsigned base value incase of overflow
         ull i = 1;
         ull k = padding_size*nth;
-        ull max_value = i<<(padding_size-1);
-        return (max_value-1) & (sequence[k/BLOCK_SIZE]>>(k & (BLOCK_SIZE-1)));
+        ull max_value = padding_size == 64 ? ~(i-1) : (i<<padding_size)-1;
+        return max_value & (sequence[k/BLOCK_SIZE]>>(k & (BLOCK_SIZE-1)));
     }
 
     template<typename T>
@@ -62,39 +60,45 @@ namespace PackedInteger
         return sequence[block];
     }
 
-    class List 
+    template<unsigned int T> class List
     {
+
+    static_assert(T <= 64, "Integer width cannot be larger than 64");
     private:
         ull* sequence;
-        const ull padding_size;
+        const ull padding_size = T;
         const unsigned char BLOCK_SIZE = 64;
     public:
-        List(ull n, ull k);
+        List(ull n);
         ~List();
         ull get(ull nth) const;
         void set(ull nth, ull i);
         ull check(ull block) const;
     };
 
-    List::List(ull n, ull k) : padding_size(k) 
+
+    template<unsigned int T>
+    List<T>::List(ull n)
     {
         ull size = n*padding_size/BLOCK_SIZE+1;
         sequence = new ull[size];
         std::fill(sequence, sequence+size, 0);
     }
 
-    List::~List() 
+    template<unsigned int T>
+    List<T>::~List() 
     {
         delete []sequence;
     }
 
-    ull List::get(ull nth) const
+    template<unsigned int T>
+    ull List<T>::get(ull nth) const
     {
         ull i = 1;
         ull start = padding_size*nth;
         ull end = start+padding_size;
         ull modulus_value = BLOCK_SIZE-1;
-        ull max_value = (i<<(padding_size - 1)) - 1;
+        ull max_value = padding_size == 64 ? ~(i-1) : (i<<padding_size)-1;
 
         // find start of value might be whole value
         ull value_a = max_value & (sequence[start/BLOCK_SIZE]>>(start & modulus_value));
@@ -108,7 +112,8 @@ namespace PackedInteger
         return value_a;
     }
 
-    void List::set(ull nth, ull i) 
+    template<unsigned int T>
+    void List<T>::set(ull nth, ull i) 
     {
         ull start = padding_size*nth;
         ull block = start/BLOCK_SIZE;
@@ -121,7 +126,8 @@ namespace PackedInteger
         }
     }
 
-    ull List::check(ull block) const
+    template<unsigned int T>
+    ull List<T>::check(ull block) const
     {
         return sequence[block];
     }
