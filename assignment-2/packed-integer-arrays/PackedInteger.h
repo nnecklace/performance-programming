@@ -29,8 +29,9 @@ namespace PackedInteger
     template<typename T>
     Array<T, EnableIfUnsigned<T>>::Array(ull n) : padding_size(sizeof(*width)*BITS)
     {
-        sequence = new ull[n];
-        std::fill(sequence, sequence+n, 0);
+        ull size = n*padding_size/BLOCK_SIZE+1;
+        sequence = new ull[size];
+        std::fill(sequence, sequence+size, 0);
     }
 
     template<typename T>
@@ -45,8 +46,8 @@ namespace PackedInteger
         // need a unsigned base value incase of overflow
         ull i = 1;
         ull k = padding_size*nth;
-        ull x = i<<(padding_size-i);
-        return (x-1) & (sequence[k/BLOCK_SIZE]>>(k & (BLOCK_SIZE-1)));
+        ull max_value = i<<(padding_size-1);
+        return (max_value-1) & (sequence[k/BLOCK_SIZE]>>(k & (BLOCK_SIZE-1)));
     }
 
     template<typename T>
@@ -73,12 +74,14 @@ namespace PackedInteger
         ~List();
         ull get(ull nth) const;
         void set(ull nth, ull i);
+        ull check(ull block) const;
     };
 
     List::List(ull n, ull k) : padding_size(k) 
     {
-        sequence = new ull[n];
-        std::fill(sequence, sequence+n, 0);
+        ull size = n*padding_size/BLOCK_SIZE+1;
+        sequence = new ull[size];
+        std::fill(sequence, sequence+size, 0);
     }
 
     List::~List() 
@@ -88,16 +91,39 @@ namespace PackedInteger
 
     ull List::get(ull nth) const
     {
-        //ull start = padding_size*nth;
-        //ull end = start+padding_size;
+        ull i = 1;
+        ull start = padding_size*nth;
+        ull end = start+padding_size;
+        ull modulus_value = BLOCK_SIZE-1;
+        ull max_value = (i<<(padding_size - 1)) - 1;
 
-        //return sequence[k/BLOCK_SIZE]<<((BLOCK_SIZE-1)&k); 
-        return nth;
+        // find start of value might be whole value
+        ull value_a = max_value & (sequence[start/BLOCK_SIZE]>>(start & modulus_value));
+
+        // start and end are not in same block
+        if ((start & modulus_value) > (end & modulus_value)) {
+            ull value_b = sequence[end/BLOCK_SIZE] & ((i<<(end & modulus_value))-1);
+            value_a |= value_b<<(BLOCK_SIZE-(start & modulus_value));
+        }
+
+        return value_a;
     }
 
     void List::set(ull nth, ull i) 
     {
-        ull k = padding_size*nth;
-        sequence[k/BLOCK_SIZE] |= i<<((BLOCK_SIZE-1)&k);
+        ull start = padding_size*nth;
+        ull block = start/BLOCK_SIZE;
+        ull pos_in_block = start & (BLOCK_SIZE - 1);
+        sequence[block] |= i<<(pos_in_block);
+        if (pos_in_block+padding_size > BLOCK_SIZE) {
+            ull bits_left = BLOCK_SIZE-pos_in_block;
+            i >>= bits_left;
+            sequence[block+1] |= i;
+        }
+    }
+
+    ull List::check(ull block) const
+    {
+        return sequence[block];
     }
 }

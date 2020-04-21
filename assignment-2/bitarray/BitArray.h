@@ -23,9 +23,9 @@ public:
     friend std::ostream& operator<<(std::ostream& output, const BitArray& b);
 };
 
-BitArray::BitArray(ull n) : size(((n+63)/64)+1)
+BitArray::BitArray(ull n) : size(n/64+1)
 {
-    unsigned int sum_size = (n+63)/128+1;
+    unsigned int sum_size = n/128+1;
     sequence = new ull[size];
     sum_table = new ull[sum_size];
     std::fill(sequence, sequence+size, 0);
