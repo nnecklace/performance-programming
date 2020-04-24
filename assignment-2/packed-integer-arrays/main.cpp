@@ -10,8 +10,8 @@ using namespace std;
 
 int main() {
     int n = 100;
-    vector<uint64_t> v(n);    
-    PackedInteger::List<100> packed_array(n);
+    vector<uint64_t> v(n);
+    PackedInteger::List<45> packed_array(n);
     //PackedInteger::Array<uint64_t> packed_array(n);
 
     mt19937 random_value(random_device{}());
