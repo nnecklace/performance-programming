@@ -1,6 +1,6 @@
 #include "BitArray.h"
 
-BitArray::BitArray(ull n) : size(n/64+1), sum_size(n/128+1)
+BitArray::BitArray(ull n) : size(n/64+1), sum_size(n/64+1)
 {
     sequence = new ull[size];
     sum_table = new ull[sum_size];
