@@ -93,7 +93,7 @@ I did create a version where t was up 4096, however, the query (and queries larg
 
 Compiling the program: `g++ -std=c++14 main.cpp -o main -O3`
 
-Running the program: `./main _n_ _k_` (let n be the length of array and k the width of each integer)
+Running the program: `./main` (let n be the length of array and k the width of each integer [both are defined in the code])
 
 The packed integer header file includes two different solutions for the packed integer task. One which accepts any arbitary K (<= 64) as a paremeter, and one which only accpets any power of two.
 
