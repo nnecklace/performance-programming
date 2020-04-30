@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <iostream>
 
 typedef unsigned long long ull;
 
@@ -20,7 +19,6 @@ namespace PackedInteger
         ~Array();
         ull get(ull nth) const;
         void set(ull nth, ull i);
-        ull check(ull block);
     };
 
     template<typename T>
@@ -54,15 +52,8 @@ namespace PackedInteger
         sequence[k/BLOCK_SIZE] |= i<<((BLOCK_SIZE-1)&k);
     }
 
-    template<typename T>
-    ull Array<T, EnableIfUnsigned<T>>::check(ull block) 
-    {
-        return sequence[block];
-    }
-
     template<unsigned int T> class List
     {
-
     static_assert(T <= 64, "Integer width cannot be larger than 64");
     private:
         ull* sequence;
@@ -73,7 +64,6 @@ namespace PackedInteger
         ~List();
         ull get(ull nth) const;
         void set(ull nth, ull i);
-        ull check(ull block) const;
     };
 
 
@@ -124,11 +114,5 @@ namespace PackedInteger
             i >>= bits_left;
             sequence[block+1] |= i;
         }
-    }
-
-    template<unsigned int T>
-    ull List<T>::check(ull block) const
-    {
-        return sequence[block];
     }
 }

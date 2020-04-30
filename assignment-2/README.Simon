@@ -1,0 +1,268 @@
+
+# Task 1 BitArray
+
+Compiling the program: `g++ -std=c++14 main.cpp BitArray.cpp -o main -O2`
+
+Running the program: `./main _n_ _m_` (let n be the number of bits and m the number of bits to set and get)
+
+The bit array is an array of bits. The bit array uses at maximum n + 63 bits allocated on the heap. The class itself might use a bit more. 
+The class has one member variable, the variable is used to tell the size of the underlying bit array structure. Of course, the class will look different because of the _sum_ task's implementation.
+The underlying bit array is backed by an array of unsigned long long ints. Each block in the array can store up to 64 bits. The array offers both get and set operations for setting and getting individual bits in the array in constant time O(1).
+
+```
+typedef unsigned long long ull;
+
+class BitArray 
+{
+private:
+    ull* sequence;
+    const size_t size;
+public:
+    BitArray(ull n);
+    ~BitArray();
+    ull get(const ull nth) const;
+    void set(ull nth, ull i);
+};
+```
+
+## Overview of development systems 
+
+Checked the performance of the program on both my local machine (MacBook Pro 2018 13" High Sierra) and Turso.
+Both systems had identical cache sizes:
+L1 cache:               32KB 
+L2 cache:               256KB
+L3 cache:               30720KB 
+
+## Result summary
+
+This summary might be a bit unexpected and might be contrasting to others result summaries. 
+While testing the speeds for both get and set I had made a few predictions for possible results. I was not able to prove any of the predictions that I had made prior to testing.
+In the end I tried to force the results to resemble my predictions, but not even then could I get consistent results to what I had predicted.
+
+This all might sound confusing, so I will try to break down my assumptions and tests and expected results. 
+
+My first assumption was that set would always be consistently slower than the first set of get calls. However, this was not the case.
+
+On average, the set calls were slower by some thousands of nanoseconds, but my prediction was that the set calls would always _consistently_ be slower.  
+I could not find any combination of n and m where I would get consistent results. For some reason, the set calls could -- from time to time -- be faster than the gets.
+I predicted that the sets would be slower for two reasons. 
+
+1. Sets would cause cache misses since the values were not present at first in the cache.
+2. My processors cores have write-through caches, meaning that when cache lines get evicted they would need the be written out to main memory (virtual memory actually).
+
+I also predicted that the get calls would be consistently faster, since cpu caches use the principle of locality when caching blocks of memory. The principle of locality includes two sets of principles, space locality, and temporal locality.
+Spacial locality: Adjacent memory locations are likely to be referenced in the future.
+Temporal locality: Memory that has been referenced recently is likely to be referenced again.
+
+After the set calls were made the same memory locations should, according to my predictions and temporal locality, be in cache memory and make the get calls faster.
+As mentioned before, the set calls were on average slower but not consistently.
+
+My second prediction was related to the second set of get calls. The task assignment requested that the vector of randomly generated number would be cleared and new randomly generated numbers would be generated and fetched from the bit array.
+I predicted that with a high enough m value, close to the size of n, that the second set of get calls would be consistently faster than the first set.
+My prediction failed yet again. I assmued that, according to the principle of locality (spacial), the values I had just fetched would bring adjacent locations into cache memory.
+With an m value close to the size of n, the second set of get calls were on average faster than the first. However, I can't find a reason why this was in consistent. 
+
+E.g. n = 256000 and m = 250000 would give somewhat consistent results. Consistent results meaning that the second set of get calls would be faster than the first.
+If, however, m was significantly smaller than n, then the results would be very inconsistent, and any group of calls could be the fastest, there was on certainty in anything.
+My speculation was that on small m values the cpus branch predictor would work better on set calls and on the second generated set of values for the get calls the number would point to the other end of the bit array meaning that temporal and spacial locality would fail on the second set of get calls.
+Only speculation though, no evidence to support this theory.
+
+Final prediction was that if n was a value higher than a cache level maxsize (> 32KB, 256KB, 30720KB) it would effect the results. I thought that the second set of get calls would be consistently slower than the first.
+My assumption was that on if n was higher than the max size of L3 level cache, and m was a much smaller number than n, and each round of the get calls would get bits from different parts of the array then the second round of get calls would cause cache lines to get eviceted from memory causing the gets to be noticebly slower.
+This, however, did not turn out to be the case. There was no consistency in these results (when n was larger than L3 cache size). Sometimes the set calls would be the fastest and sometimes the second set of get calls would be the fastest.
+I can't really say why this was the case. I tried changing to different time measurement options but it didn't help.
+
+E.g n = 300000000 and m = 4096
+
+So, in summary. Set calls were on average slower than the get calls by some thousands of nanoseconds. The get calls were on average faster than the first set of get calls. 
+These results assume that n < 248000000 and m was close to the size of n. Some inconsistenties may be the result of for loops being slow or other random factors.
+
+Intersting thing I noticed. If I made a third set of get calls with randomly generated numbers, the third set would always be slowest set of calls, even slower than the set calls.
+Here is where I think the cache eviction played a part.
+
+# Task 2 Sum
+
+Compiling the program: `g++ -std=c++14 main.cpp BitArray.cpp -o main -O2`
+
+Running the program: `./main _n_ _m_` (let n be the number of bits and m the number of bits to set and get)
+
+The sum function uses a auxiliery array of the same size as the normal bitarray and adds one more member variable that gives the size of the sum auxiliery array.
+Two new methods were added to the bitarray class. One for getting the sum of bits to a certain position n in the bit array in constant time O(1). And a method compact which performs a compaction on the sum array so that the works in O(1) time.
+
+```
+class BitArray 
+{
+private:
+    ull* sequence;
+    ull* sum_table;
+    const size_t size;
+    const size_t sum_size;
+public:
+    BitArray(ull n);
+    ~BitArray();
+    ull get(const ull nth) const;
+    void set(ull nth, ull i);
+    ull sum (const ull i) const;
+    void compact();
+};
+```
+
+The sum auxiliery array is backed by an array of 64 bit blocks, just like the bit arrray itself. This is my optimized solution where t is 64. I tested other sizes of t, like 128, 256, 512. 
+Larger than 512 would have meant that my code would have been quite unmanageble and convoluted and I could not guarantee a constant time lookup, the query would have performend in O(t) where t is the block size.
+On the sizes of the that I did test, I did not see any significantl differences between the performance of batch queries. I settled with a t size of 64 since it was easy to implement and provided really good performance on small sizes of m, much better than any any other size of t.
+
+My theory on why t size of 64 performed better on small sizes of m is that the temporal of locality and cpu predictor were more effiecient when m was relativly small. 
+Since the sum queries would target the same block quite regularly and the might have been a chance that the spacial locality in the setting the bits would have brought some memory locations of the sum auxilierary array into the cache already.
+(Small m meaning m < 200 faster meaning the difference between the sizes of t were some thousands of nanoseconds). 
+
+I did create a version where t was up 4096, however, the query (and queries larger than 512) ran in O(t) time as mentioned before, and was therefore much slower than any of the other sizes of t I tried.
+
+# Task 3 PackedIntegerArray
+
+Compiling the program: `g++ -std=c++14 main.cpp -o main -O3`
+
+Running the program: `./main _n_ _k_` (let n be the length of array and k the width of each integer)
+
+The packed integer header file includes two different solutions for the packed integer task. One which accepts any arbitary K (<= 64) as a paremeter, and one which only accpets any power of two.
+
+`PackedInteger::List` Accepts any k (<= 64).
+`PackedInteger::Array` Accepts any power of two (<= 64).
+
+Both solutions use a block size of 64 bits. And both solution use at most kn + 63 bits of memory, and some crucial member variables.
+
+`PackedInteger::Array` Is faster than the `PackedInteger::List` (more on this in the exploratory section). Aside from the speed of the solutions both work the same way.
+
+```
+class List
+{
+private:
+    ull* sequence;
+    const ull padding_size = T;
+    const unsigned char BLOCK_SIZE = 64;
+public:
+    List(ull n);
+    ~List();
+    ull get(ull nth) const;
+    void set(ull nth, ull i)
+};
+
+class Array 
+{
+private:
+    ull* sequence;
+    T* width;
+    const ull padding_size;
+    const unsigned char BLOCK_SIZE = 64
+public:
+    Array(ull n);
+    ~Array();
+    ull get(ull nth) const;
+    void set(ull nth, ull i);
+}
+```
+
+# Task 4 Exploratory
+
+1. Fast division and modulo (2-3 marks)
+One of the example exploratory tasks was fast modulus and fast integer division. I thought this would be an intersting and valuable thing to explore.
+I ended up using this technique in my bit array solution. `ull block = nth>>6`. My block sizes were optimized to be a power of 2, 64 in this case.
+That made it easy to implement fast integer division. With a block size of 64, division would be as simple as shifting bits 6 steps to the right. 
+
+How it works: `1100000 >>6 00000011 = 192/64 3`
+
+Fast division assembly
+```
+movabs  rax, 192 
+mov     QWORD PTR [rbp-8], rax
+mov     rax, QWORD PTR [rbp-8]
+sar     rax, 6
+mov     DWORD PTR [rbp-12], eax
+```
+
+Slower division assembly
+```
+movabs  rax, 192 
+mov     QWORD PTR [rbp-8], rax
+mov     rax, QWORD PTR [rbp-8]
+lea     rdx, [rax+63]
+test    rax, rax
+cmovs   rax, rdx
+sar     rax, 6
+mov     DWORD PTR [rbp-12], eax
+```
+
+While both perform the same cpu instruction, `sar`, to divide 192. The latter one performs two checks which add some extra time to the performance (some extra meaning few extra cpu cycles, nothing noticeable).
+The two commands are in this case, `cmovs` and `test`. The `test` instruction sets a flag according to its result, while `cmovs` will only move a value if a certain flag has been set by `test`.
+
+Fast modulos works in a similair fashion. With modulo we can just use bitwise and operator. `nth & 63`. 
+
+How it works: `1100000 & 00111111 = 192%64 0`. Why is this fast? Some compilers will perform multiple multiplication, and or subtraction, operations to get the remainder of an integer. 
+According to some source on the internet, if a integer is larger than 32 bits the modulo calculation would become quite heavy. Didn't find any proof of this myself.
+One interesting thing about fast modulo is that modern compilers will do it automatically for you.
+
+Example, both code snippets will be compiled to the same assembly code: `192%64` and `192&63`. Will both result in:
+
+```
+movabs  rax, 192 
+mov     QWORD PTR [rbp-8], rax
+mov     rax, QWORD PTR [rbp-8]
+and     eax, 63
+mov     DWORD PTR [rbp-12], eax
+```
+
+In the end neither operation sped up anything significantly. Modern compilers seem to be able to optimize division and modulo operations quite well without extra help.
+I feel that 2 or 3 marks would be a suitable reward for this task. This task required to learn x86 assembly code to some extent, and knowledge about compilers and compiler optimization was also required. 
+I needed to understand if there was any change between regular division and modulo and if there was what is was, why was it faster. I would argue that this shows an interest not only in understanding the assembled code but also compilers and how cpus can made to perform faster, in some situations that is.
+
+2. Templates & Packed integer power of 2 (8-10 marks)
+
+I combined both packed integer array for power 2, and template task in this last exploratory section. I wanted to try and learn even more about c++ templating and try to get a hang of compile time validation.
+
+I created two versions of the packed integer array, `PackedInteger::Array` and `PackedInteger::List`. Both support the same functionality and behave the same way. Difference is that `PackedInteger::Array` uses a template to validate that only an unsigned integer type os passed as a template parameter, while `PackedInteger::List` requires that the template arguments passed to it is 64 <=.
+
+```
+template<typename T> using EnableIfUnsigned = typename std::enable_if<std::is_unsigned<T>::value>::type;
+template<typename T, typename = typename std::enable_if<std::is_unsigned<T>::value>::type> class Array;
+template<typename T> class Array<T, EnableIfUnsigned<T>>
+{
+private:
+    ull* sequence;
+    T* width;
+    const ull padding_size;
+    const unsigned char BLOCK_SIZE = 64;
+public:
+    Array(ull n);
+    ~Array();
+    ull get(ull nth) const;
+    void set(ull nth, ull i);
+};
+```
+
+`EnableIfUnsigned` is a template alias which validates the argument passed to the template, and makes sure it's an unsigned integer. Coincidentally, all unsigned integer types happen to have bit sizes of powers of 2. More on this later.
+
+```
+template<unsigned int T> class List
+{
+static_assert(T <= 64, "Integer width cannot be larger than 64");
+private:
+    ull* sequence;
+    const ull padding_size = T;
+    const unsigned char BLOCK_SIZE = 64;
+public:
+    List(ull n);
+    ~List();
+    ull get(ull nth) const;
+    void set(ull nth, ull i);
+};
+```
+
+`PackedInteger::List` also uses template, although the template is much more simple than in `PackedInteger::Array`. This template takes any unsigned integer value as an argument and, with the help of static_assert, validates that the argument is 64 or less.
+This is compile time validation that provides much safer code or a potential user of this class. We can use compile time validation since anyone using this class will know at compile time what the size of the integers will be.
+
+Performance comparison between the two solutions. `PackedInteger::List` was consistently slower than `PackedInteger::Array`. After some research I noticed that the likely reason for this was that `PackedInteger::List` may have to perform two writes or reads to the underlying array structure.
+This is the case if a number spans across two blocks. This never happens with `PackedInteger::Array` since a number will never span across multiple blocks. While `PackedInteger::List` was slower in time wise, it did use less memory than its array counterpart.
+This is because the class accepts any k value, not just powers of 2. Someone, who is using the `PackedInteger::List` class, will know ahead of time what the max size number placed in the list will be, they can then optimize and place the correct k value and only use as much memory as they actually need.
+Example:
+If the max value is 2047, then we know that we only need 11 bit integers. This is possible to do with `PackedInteger::List` but not with `PackedInteger::Array` since the closest higher value would be 16, we would be wasting 5 bits of unused space.
+
+In summary, `PackedInteger::List` is slower than `PackedInteger::Array` but uses less memory. The highest time difference I record was with a n value of 2480000 and width 11. Difference was 1.2 milliseconds betweeen the array and list.

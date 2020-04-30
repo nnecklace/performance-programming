@@ -8,84 +8,61 @@
 
 using namespace std;
 
-void test1() {
-    int n, m;
-    vector<int> bits;
-
-    cin >> n;
-
+void test1(vector<int>& bits, int n, int m) {
     BitArray ba = BitArray(n);
-
-    cin >> m;
-
-    bits.resize(m);
 
     mt19937 random_value(random_device{}());
     uniform_int_distribution<int> hat(0,n);
     for (int i = 0; i < m; ++i) {
-        bits[i] = hat(random_value);
+        bits.push_back(hat(random_value));
     }
 
-    auto now = std::chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < bits.size(); ++i) {
-        ba.set(bits[i], 1);
-    }
-    auto end = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    for (int i : bits) ba.set(i, 1);
+    auto end = std::chrono::steady_clock::now();
     auto time = end-now;
-    cout << "Time taken for setting " << time.count() << "nanos" << endl;
+    cout << "Time taken for setting " << time.count() << " nanos" << endl;
 
-    now = std::chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < bits.size(); ++i) {
-        ull p = ba.get(bits[i]);
+    now = std::chrono::steady_clock::now();
+    for (int i : bits) {
+        // we need to store the value somewhere, otherwise to compiler will remove the get call
+        ull p = ba.get(i);
     }
-    end = std::chrono::high_resolution_clock::now();
+    end = std::chrono::steady_clock::now();
     time = end-now;
-    cout << "Time taken for getting " << time.count() << "nanos" << endl;
+    cout << "Time taken for getting " << time.count() << " nanos" << endl;
+
+    bits.clear();
+    for (int i = 0; i < m; ++i) {
+        bits.push_back(hat(random_value));
+    }
+
+    now = std::chrono::steady_clock::now();
+    for (int i : bits) {
+        ull p = ba.get(i);
+    }
+    end = std::chrono::steady_clock::now();
+    time = end-now;
+    cout << "Time taken for getting " << time.count() << " nanos" << endl;
 }
 
-void test2() {
-    unsigned long long n, m;
-    vector<int> bits;
-
-    cin >> n;
-
+void test2(vector<int>& bits, int n, int m) {
     BitArray ba = BitArray(n);
-
-    cin >> m;
-
-    bits.resize(m);
 
     mt19937 random_value(random_device{}());
     uniform_int_distribution<int> hat(0,n);
-    for (unsigned long long i = 0; i < m; ++i) {
-        bits[i] = hat(random_value);
+    for (int i = 0; i < m; ++i) {
+        bits.push_back(hat(random_value));
     }
 
-    for (size_t i = 0; i < bits.size(); ++i) {
-        cout << "Setting " << bits[i] << endl;
-        ba.set(bits[i], 1);
-    }
+    for (int i : bits) ba.set(i, 1);
 
     ba.compact();
 
     auto now = std::chrono::high_resolution_clock::now();
-    cout << "Sum up to 1 " << ba.sum(1) << endl;
-    cout << "Sum up to 5 " << ba.sum(5) << endl;
-    cout << "Sum up to 11 " << ba.sum(11) << endl;
-    cout << "Sum up to 20 " << ba.sum(20) << endl;
-    cout << "Sum up to 50 " << ba.sum(50) << endl;
-    cout << "Sum up to 64 " << ba.sum(64) << endl;
-    cout << "Sum up to 75 " << ba.sum(75) << endl;
-    cout << "Sum up to 100 " << ba.sum(100) << endl;
-    cout << "Sum up to 127 " << ba.sum(127) << endl;
-    cout << "Sum up to 128 " << ba.sum(128) << endl;
-    cout << "Sum up to 200 " << ba.sum(200) << endl;
-    //cout << "Sum up to 256 " << ba.sum(256) << endl;
-    //cout << "Sum up to 512 " << ba.sum(512) << endl;
-    //cout << "Sum up to 1024 " << ba.sum(1024) << endl;
-    //cout << "Sum up to 2048 " << ba.sum(2048) << endl;
-    //cout << "Sum up to 4096 " << ba.sum(4096) << endl;
-    cout << "Sum up to " << n-1 << " " << ba.sum(n-1) << endl;
+    for (int i : bits) {
+        ull p = ba.sum(i);
+    }
     auto end = std::chrono::high_resolution_clock::now();
     auto time = end-now;
     cout << "Time taken for sum queries " << time.count() << " nanos" << endl;
@@ -93,5 +70,8 @@ void test2() {
 }
 
 int main() {
-    test2();
+    int n, m;
+    vector<int> bits;
+    cin >> n >> m;
+    test2(bits,n,m);
 }
