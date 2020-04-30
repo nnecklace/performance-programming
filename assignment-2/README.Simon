@@ -266,3 +266,6 @@ Example:
 If the max value is 2047, then we know that we only need 11 bit integers. This is possible to do with `PackedInteger::List` but not with `PackedInteger::Array` since the closest higher value would be 16, we would be wasting 5 bits of unused space.
 
 In summary, `PackedInteger::List` is slower than `PackedInteger::Array` but uses less memory. The highest time difference I record was with a n value of 2480000 and width 11. Difference was 1.2 milliseconds betweeen the array and list.
+
+I feel that this overall deserves between 8 and 10 marks. I combined both templating and power of 2 packed integer array. In the assignment spec both of these tasks were marked as 5 mark tasks. I feel these tasks were both really difficult to implement and it also shows a great interest in not only c++ but also computer architecture and compiler and assembly.
+Both tasks were very time consuming and were much more difficult to implement than the other exploratory tasks mentioned in the spec. Templating is still an advanced feature of c++, and I'm still eager to lean more about it, and quite out of scope for a c++ beginner like myself. These are the reasons why I find that these two tasks deserve such high marks.
