@@ -5,7 +5,7 @@ Compiling the program: `g++ -std=c++14 main.cpp BitArray.cpp -o main -O2`
 
 Running the program: `./main _n_ _m_` (let n be the number of bits and m the number of bits to set and get)
 
-The bit array is an array of bits. The bit array uses at maximum n + 63 bits allocated on the heap. The class itself might use a bit more. The class has one member variable, the variable is used to tell the size of the underlying bit array structure. Of course, the class will look different because of the _sum_ task's implementation. The underlying bit array is backed by an array of unsigned long long ints. Each block in the array can store up to 64 bits. The array offers both get and set operations for setting and getting individual bits in the array in constant time O(1).
+The bit array is an array of bits. The bit array uses at maximum n + 63 bits allocated on the heap. The class itself might use a bit more space. The class has one member variable, the variable is used to tell the size of the underlying bit array structure. Of course, the class will look different because of the _sum_ task's implementation. The underlying bit array is backed by an array of unsigned long long ints. Each block in the array can store up to 64 bits. The array offers both get and set operations for setting and getting individual bits in the array in constant time O(1).
 
 ```
 typedef unsigned long long ull;
