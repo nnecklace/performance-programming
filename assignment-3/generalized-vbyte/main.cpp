@@ -13,9 +13,7 @@ int main() {
     v.push_back(250);
     v.push_back(309);
 
-    // max k 63
-
     VByteArray vb(4U, v);
 
-    vb.accessScan(6);
+    std::cout << vb.accessScan(6) << std::endl;
 }

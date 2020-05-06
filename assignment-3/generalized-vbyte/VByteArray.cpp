@@ -37,80 +37,53 @@ VByteArray::~VByteArray()
 
 ull VByteArray::accessScan(const ull nth) const 
 {
-    uint8_t bits_read = 0;
-    uint8_t bits_left = BLOCK_SIZE;
-    uint8_t chunks = BLOCK_SIZE/(width+1);
-    uint8_t rem = BLOCK_SIZE%(width+1);
-    uint32_t stop = 1<<(width+1);
-    uint32_t block = 0;
-    uint32_t current = 0;
+    ull padding = width+1;
+    ull stop_bit = 1<<width;
+    ull position = 0;
+    ull current_nth = 0;
+    
+    ull block_number = 0;
+    ull block = sequence[block_number];
+    uint8_t overflow_bits = 0;
 
-    ull value = sequence[block];
-
-    // find value
     while (true) {
-        value >>= bits_read;
+        block >>= overflow_bits;
 
-        bits_left = BLOCK_SIZE-bits_read;
-        chunks = bits_left/(width+1);
-        rem = bits_left%(width+1);
-        bits_read = 0;
+        uint8_t bits_in_block = BLOCK_SIZE-overflow_bits;
+        uint8_t chunks_in_block = bits_in_block/padding;
+        uint8_t remainder_bits = bits_in_block%padding;
+        
+        ull remainder_mask = (1<<remainder_bits)-1;
+        ull overflow_mask = (1<<(padding-remainder_bits))-1;
+
+        overflow_bits = padding-remainder_bits;
+
         bool found = false;
 
-        for (int i = 1; i <= chunks; ++i) {
-            if (current == nth-1) {
+        for (int i = 1; i <= chunks_in_block; ++i) {
+            if (current_nth == nth-1) {
                 found = true;
                 break;
             }
-            if ((value & stop) != 0) current++;
-            value >>= width+1;
-            bits_left -= width+1;
+            if ((block & stop_bit) != 0) current_nth++;
+            block >>= padding;
+            bits_in_block -= padding;
+            position += padding;
         }
 
-        if (found || current == nth-1) break;
+        if (found || current_nth == nth-1) break;
 
-        // handle remainder
-        if (rem > 0) {
-            ull temp = value>>rem;
-            uint32_t overflow_mask = (1<<(width-rem+1))-1;
-            temp |= (sequence[block+1] & overflow_mask)<<(width-rem+rem);
-            // bits read from next block
-            bits_read = width-rem+rem;
-            if ((temp & stop) != 0) current++;
+        if (remainder_bits > 0) {
+            ull temp = (block & remainder_mask);
+            temp |= (sequence[block_number+1] & overflow_mask)<<remainder_bits;
+            if ((temp & stop_bit) != 0) current_nth++;
+            position += padding;
         }
 
-        value = sequence[++block];
+        block = sequence[++block_number];
     }
 
-    // start decoding
-    ull decoded = 0;
-    ull mask = (1<<(width+1))-1;
-    ull shift_value = 0;
-
-    if (width+1 > bits_left) {
-        uint32_t remaining_bit_mask = (1<<(bits_left+1))-1;
-        decoded |= (value & remaining_bit_mask);
-        value = sequence[block+1];
-        ull remaining = width-bits_left;
-        uint32_t overflow_mask = 1<<((1<<(remaining+1))-1);
-        decoded |= (value & overflow_mask)<<(bits_left+1);
-        value >>= remaining+1;
-    }
-
-    while (true) {
-        bool found = false;
-        ull next = value>>(width+1); 
-        if ((next & stop) == stop) {
-            next /= (1<<(width+1));
-            found = true;
-        }
-        next &= mask;
-        decoded |= next<<(shift_value-1);
-        shift_value += width;
-        if (found) break;
-    }
-
-    return decoded;
+    return this->decode(position);
 }
 
 int VByteArray::getSizeInBytes() const
