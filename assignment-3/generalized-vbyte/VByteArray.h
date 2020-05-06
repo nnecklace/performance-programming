@@ -1,5 +1,7 @@
 #include <vector>
 #include <algorithm>
+#include <iostream>
+#include <bitset>
 typedef unsigned long long ull;
 
 class VByteArray 
@@ -50,7 +52,7 @@ private:
             ull remainder_mask = (1<<remainder_bits)-1;
             ull overflow_mask = (1<<(padding-remainder_bits))-1;
 
-            overflow_bits = padding-remainder_bits;
+            overflow_bits = remainder_bits > 0 ? padding-remainder_bits : 0;
 
             bool complete = false;
 
@@ -70,7 +72,10 @@ private:
                 temp |= (sequence[block_number+1] & overflow_mask)<<remainder_bits;
                 decoded |= temp<<shift_value;
                 shift_value += width;
-                if ((temp & stop_bit) != 0) break;
+                if ((temp & stop_bit) != 0) {
+                    decoded -= (1<<(BLOCK_SIZE-__builtin_clzl(decoded)-1)); // remove stop bit...the hard way
+                    break;
+                }
             }
 
             block = sequence[++block_number];

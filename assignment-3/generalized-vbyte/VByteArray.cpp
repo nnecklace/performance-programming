@@ -56,7 +56,7 @@ ull VByteArray::accessScan(const ull nth) const
         ull remainder_mask = (1<<remainder_bits)-1;
         ull overflow_mask = (1<<(padding-remainder_bits))-1;
 
-        overflow_bits = padding-remainder_bits;
+        overflow_bits = remainder_bits > 0 ? padding-remainder_bits : 0;
 
         bool found = false;
 
