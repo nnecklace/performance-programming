@@ -16,7 +16,7 @@ VByteArray::VByteArray(uint8_t k, std::vector<ull>& array) : width(k), padding_s
 
         sequence[next/BLOCK_SIZE] |= encoded<<position;
 
-        if (length+position > BLOCK_SIZE) {
+        if ((BLOCK_SIZE-length+position) > BLOCK_SIZE) {
             encoded >>= BLOCK_SIZE-position;
             sequence[next/BLOCK_SIZE+1] |= encoded;
         }
@@ -38,7 +38,7 @@ VByteArray::~VByteArray()
 ull VByteArray::accessScan(const ull nth) const 
 {
     ull padding = width+1;
-    ull stop_bit = 1<<width;
+    ull stop_bit = 1ULL<<width;
     ull position = 0;
     ull current_nth = 0;
     
@@ -53,8 +53,8 @@ ull VByteArray::accessScan(const ull nth) const
         uint8_t chunks_in_block = bits_in_block/padding;
         uint8_t remainder_bits = bits_in_block%padding;
         
-        ull remainder_mask = (1<<remainder_bits)-1;
-        ull overflow_mask = (1<<(padding-remainder_bits))-1;
+        ull remainder_mask = (1ULL<<remainder_bits)-1;
+        ull overflow_mask = (1ULL<<(padding-remainder_bits))-1;
 
         overflow_bits = remainder_bits > 0 ? padding-remainder_bits : 0;
 

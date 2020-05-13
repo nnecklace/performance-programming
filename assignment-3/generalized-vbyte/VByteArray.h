@@ -16,7 +16,7 @@ private:
     {
         ull base = 0;
         ull encoded = 0;
-        ull divider = 1<<width;
+        ull divider = 1ULL<<width;
         while (true) {
             encoded |= ((input % divider)<<base);
             if (input < divider) {
@@ -35,13 +35,13 @@ private:
 
         ull block_number = position/BLOCK_SIZE;
         ull block = sequence[block_number];
-        ull stop_bit = 1<<width;
+        ull stop_bit = 1ULL<<width;
 
         uint8_t padding = width+1;
         uint8_t overflow_bits = position%BLOCK_SIZE;
         uint8_t shift_value = 0;
 
-        ull chunk_mask = (1<<width)-1;
+        ull chunk_mask = (1ULL<<width)-1;
 
         while (true) {
             block >>= overflow_bits;
@@ -49,8 +49,8 @@ private:
             uint8_t chunks_in_block = bits_in_block/padding;
             uint8_t remainder_bits = bits_in_block%padding;
 
-            ull remainder_mask = (1<<remainder_bits)-1;
-            ull overflow_mask = (1<<(padding-remainder_bits))-1;
+            ull remainder_mask = (1ULL<<remainder_bits)-1;
+            ull overflow_mask = (1ULL<<(padding-remainder_bits))-1;
 
             overflow_bits = remainder_bits > 0 ? padding-remainder_bits : 0;
 
@@ -73,7 +73,7 @@ private:
                 decoded |= temp<<shift_value;
                 shift_value += width;
                 if ((temp & stop_bit) != 0) {
-                    decoded -= (1<<(BLOCK_SIZE-__builtin_clzl(decoded)-1)); // remove stop bit...the hard way
+                    decoded -= (1ULL<<(BLOCK_SIZE-__builtin_clzl(decoded)-1)); // remove stop bit...the hard way
                     break;
                 }
             }
@@ -85,14 +85,15 @@ private:
     }
     void increaseSize() 
     {
-        ull* temp = new ull[2*size];
+        ull new_size = 2*size;
+        ull* temp = new ull[new_size];
+        std::fill(temp, temp+new_size, 0);
         std::copy(sequence, sequence+size, temp);
         delete[] sequence;
         sequence = temp;
-        size *= 2;
+        size = new_size;
     }
 public:
-    VByteArray(uint8_t k, ull* array, int length);
     VByteArray(uint8_t k, std::vector<ull>& array);
     ~VByteArray();
     // linear search until we reach nth-1 stop bits

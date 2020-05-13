@@ -1,25 +1,30 @@
 #include <iostream>
-#include "VByteArray.h"
 #include <vector>
-#include <bitset>
+#include "VByteArray.h"
+#include <fstream>
+#include <string>
 
 using namespace std;
 
 int main() {
+    int k;
+    cin >> k;
+
+    if (k > 63) {
+        cout << "Max K 63" << endl;
+        return 0;
+    }
+
     vector<ull> v;
-    v.push_back(500);
-    v.push_back(14);
-    v.push_back(322);
-    v.push_back(401);
-    v.push_back(250);
-    v.push_back(309);
 
-    VByteArray vb(63U, v);
+    ifstream file("data/F0", ios::binary);
 
-    std::cout << vb.accessScan(1) << std::endl;
-    std::cout << vb.accessScan(2) << std::endl;
-    std::cout << vb.accessScan(3) << std::endl;
-    std::cout << vb.accessScan(4) << std::endl;
-    std::cout << vb.accessScan(5) << std::endl;
-    std::cout << vb.accessScan(6) << std::endl;
+    ull number;
+
+    while(file.read(reinterpret_cast<char*>(&number), sizeof(number))) {
+        v.push_back(number);
+    }
+
+    VByteArray vb(k, v);
+
 }
