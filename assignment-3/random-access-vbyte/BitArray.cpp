@@ -1,6 +1,4 @@
 #include "BitArray.h"
-#include <bitset>
-#include <iostream>
 
 BitArray::BitArray(ull n) : size(n/64+1), sum_size(n/64+1)
 {
@@ -43,9 +41,4 @@ void BitArray::compact()
     for (size_t i = 1; i < size; ++i) {
         sum_table[i] = __builtin_popcountl(~sequence[i])+sum_table[i-1];
     }
-}
-
-ull BitArray::check(ull section) 
-{
-    return sequence[section];
 }

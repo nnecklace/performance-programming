@@ -1,6 +1,4 @@
 #include "RandomAccessArray.h"
-#include <iostream>
-#include <bitset>
 
 template<unsigned int T>
 RandomAccessArray<T>::~RandomAccessArray() 
@@ -90,12 +88,6 @@ ull RandomAccessArray<T>::accessScan(ull nth)
     } while (stop_bit != 1);
 
     return decoded;
-}
-
-template<unsigned int T>
-std::vector<std::pair<BitArray*, PackedIntegerArray*>> RandomAccessArray<T>::getLayers() 
-{
-    return layers;
 }
 
 // There is apparently no other way to do this ://

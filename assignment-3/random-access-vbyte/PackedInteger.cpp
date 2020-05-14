@@ -45,8 +45,3 @@ void PackedIntegerArray::setNext(ull i)
     }
     next++;
 }
-
-ull PackedIntegerArray::check(ull section) 
-{
-    return sequence[section];
-}

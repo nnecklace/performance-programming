@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <vector>
 #include "PackedInteger.h"
 #include "BitArray.h"
@@ -15,5 +14,4 @@ public:
     void encodeAndPush(ull number);
     ull accessScan(ull nth);
     void compact();
-    std::vector<std::pair<BitArray*, PackedIntegerArray*>> getLayers();
 };

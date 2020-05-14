@@ -13,5 +13,4 @@ public:
     ~PackedIntegerArray();
     ull get(ull nth) const;
     void setNext(ull i);
-    ull check(ull section);
 };

@@ -16,5 +16,4 @@ public:
     void setNext(ull i);
     ull sum (const ull i) const;
     void compact();
-    ull check(ull section);
 };
