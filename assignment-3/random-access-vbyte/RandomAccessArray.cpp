@@ -1,4 +1,6 @@
 #include "RandomAccessArray.h"
+#include <iostream>
+#include <bitset>
 
 template<unsigned int T>
 RandomAccessArray<T>::~RandomAccessArray() 
@@ -30,12 +32,12 @@ void RandomAccessArray<T>::encodeAndPush(ull number)
 
     uint8_t length = 64 - __builtin_clzl(encoded);
     uint8_t parts = 0;
-    ull data_block_mask = (1<<width)-1;
+    ull data_block_mask = (1ULL<<width)-1ULL;
     uint8_t layer = 1;
 
     while (true) {
         if (length <= 0) break;
-        uint8_t part = encoded>>((width+1)*parts);
+        ull part = encoded>>((width+1)*parts);
         std::pair<BitArray*, PackedIntegerArray*> current_layer;
 
         if (layer <= layers.size()) {
@@ -44,7 +46,7 @@ void RandomAccessArray<T>::encodeAndPush(ull number)
             current_layer = {new BitArray(50000000), new PackedIntegerArray(50000000, width)};
         }
 
-        if ((part & divider) != 0) {
+        if ((part & divider) == divider) {
             current_layer.first->setNext(1);
         } else {
             current_layer.first->setNext(0);
@@ -60,7 +62,34 @@ void RandomAccessArray<T>::encodeAndPush(ull number)
         parts++;
         length -= width+1;
     }
-    max_layer = std::max(max_layer, layer);
+}
+
+template<unsigned int T>
+void RandomAccessArray<T>::compact() 
+{
+    for (int i = 1; i < layers.size(); ++i) {
+        std::pair<BitArray*, PackedIntegerArray*> layer = layers[i];
+        layer.first->compact();
+    }
+}
+
+template<unsigned int T>
+ull RandomAccessArray<T>::accessScan(ull nth) 
+{
+    ull decoded = 0;
+    ull i = nth;
+    uint8_t stop_bit = 0;
+    uint8_t layer = 0;
+
+    do {
+        std::pair<BitArray*, PackedIntegerArray*> current_layer = layers[layer];
+        stop_bit = current_layer.first->get(i);
+        decoded |= current_layer.second->get(i)<<(width*layer);
+        i = current_layer.first->sum(i) - 1;
+        layer++;
+    } while (stop_bit != 1);
+
+    return decoded;
 }
 
 template<unsigned int T>
@@ -136,4 +165,3 @@ template class RandomAccessArray<60>;
 template class RandomAccessArray<61>;
 template class RandomAccessArray<62>;
 template class RandomAccessArray<63>;
-template class RandomAccessArray<64>;

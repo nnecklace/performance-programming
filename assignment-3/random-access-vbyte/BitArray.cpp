@@ -1,4 +1,6 @@
 #include "BitArray.h"
+#include <bitset>
+#include <iostream>
 
 BitArray::BitArray(ull n) : size(n/64+1), sum_size(n/64+1)
 {
@@ -28,18 +30,18 @@ void BitArray::setNext(ull i)
 ull BitArray::sum(const ull nth) const
 {
     if (nth < 64) {
-        return __builtin_popcountl(sequence[0]<<(63-nth));
+        return __builtin_popcountl((~sequence[0])<<(63U-nth));
     }
 
-    ull block = nth>>6;
-    return sum_table[block-1]+__builtin_popcountl(sequence[block]<<(63-(nth&63)));
+    ull block = nth>>6U;
+    return sum_table[block-1]+__builtin_popcountl((~sequence[block])<<(63U-(nth&63U)));
 }
 
 void BitArray::compact()
 {
-    sum_table[0] = __builtin_popcountl(sequence[0]);
+    sum_table[0] = __builtin_popcountl(~sequence[0]);
     for (size_t i = 1; i < size; ++i) {
-        sum_table[i] = __builtin_popcountl(sequence[i])+sum_table[i-1];
+        sum_table[i] = __builtin_popcountl(~sequence[i])+sum_table[i-1];
     }
 }
 

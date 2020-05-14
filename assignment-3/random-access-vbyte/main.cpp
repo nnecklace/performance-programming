@@ -1,12 +1,12 @@
 #include <iostream>
 #include <bitset>
-#include "RandomAccessArray.h"
 #include <fstream>
+#include "RandomAccessArray.h"
 
 using namespace std;
 
 int main() {
-    RandomAccessArray<7> ranArray;
+    RandomAccessArray<63> ranArray;
 
     ifstream file("data/F0", ios::binary);
 
@@ -15,4 +15,8 @@ int main() {
     while(file.read(reinterpret_cast<char*>(&number), sizeof(number))) {
         ranArray.encodeAndPush(number);
     }
+
+    file.close();
+
+    ranArray.compact();
 }
