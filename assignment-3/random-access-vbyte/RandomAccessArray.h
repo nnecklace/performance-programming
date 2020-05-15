@@ -14,4 +14,5 @@ public:
     void encodeAndPush(ull number);
     ull accessScan(ull nth);
     void compact();
+    std::vector<std::pair<BitArray*, PackedIntegerArray*>> getLayers();
 };

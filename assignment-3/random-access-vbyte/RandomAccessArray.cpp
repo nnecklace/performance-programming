@@ -1,5 +1,5 @@
 #include "RandomAccessArray.h"
-
+#include <iostream>
 template<unsigned int T>
 RandomAccessArray<T>::~RandomAccessArray() 
 {
@@ -65,7 +65,7 @@ void RandomAccessArray<T>::encodeAndPush(ull number)
 template<unsigned int T>
 void RandomAccessArray<T>::compact() 
 {
-    for (int i = 1; i < layers.size(); ++i) {
+    for (int i = 0; i < layers.size(); ++i) {
         std::pair<BitArray*, PackedIntegerArray*> layer = layers[i];
         layer.first->compact();
     }
@@ -83,11 +83,19 @@ ull RandomAccessArray<T>::accessScan(ull nth)
         std::pair<BitArray*, PackedIntegerArray*> current_layer = layers[layer];
         stop_bit = current_layer.first->get(i);
         decoded |= current_layer.second->get(i)<<(width*layer);
-        i = current_layer.first->sum(i) - 1;
+        //std::cout << current_layer.first->sum(i) << std::endl;
+        ull sum = current_layer.first->sum(i);
+        i = sum > 0 ? sum - 1 : sum;
         layer++;
     } while (stop_bit != 1);
 
     return decoded;
+}
+
+template<unsigned int T>
+std::vector<std::pair<BitArray*, PackedIntegerArray*>> RandomAccessArray<T>::getLayers() 
+{
+    return layers;
 }
 
 // There is apparently no other way to do this ://
