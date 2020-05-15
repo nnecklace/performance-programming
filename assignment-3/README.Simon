@@ -13,32 +13,32 @@ Here are some stats for some tests I ran.
 ```
 K = 10
 Time taken 14696816000 nanos
-Total memory 268435474
+Total memory 268435474 Bytes
 Calls made = 100
 
 K = 7
 Time taken 16175459000 nanos
-Total memory 268435474
+Total memory 268435474 Bytes
 Calls made = 120
 
 K = 62
 Time taken 35389924000 nanos
-Total memory 536870930
+Total memory 536870930 Bytes
 Calls made = 110
 
 K = 24
 Time taken 18324338000 nanos
-Total memory 268435474
+Total memory 268435474 Bytes
 Calls made = 100
 
 K = 32
 Time taken 17519960000 nanos
-Total memory 268435474
+Total memory 268435474 Bytes
 Calls made = 100
 
 K = 48
-Time taken for array setting 21805994000 nanos
-Total memory 536870930
+Time taken 21805994000 nanos
+Total memory 536870930 Bytes
 Calls made = 100
 ```
 
@@ -58,7 +58,7 @@ Task was much more fun than the previous one. Enjoyable to implement, and I feel
 
 ```
 K = 7
-Time taken 16175459000 nanos
+Time taken 48000 nanos
 Total memory ~1.8 Gigabytes
 Calls made = 120
 
@@ -70,7 +70,6 @@ Calls made = 100
 K = 62
 Time taken 27000 nanos
 Total memory ~1.8 Gigabytes
-Total memory 536870930
 Calls made = 110
 
 K = 24
