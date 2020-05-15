@@ -2,6 +2,7 @@
 #include <bitset>
 #include <random>
 #include <fstream>
+#include <chrono>
 #include "RandomAccessArray.h"
 
 using namespace std;
@@ -9,16 +10,13 @@ using namespace std;
 // g++ -fsanitize=undefined main.cpp BitArray.cpp RandomAccessArray.cpp PackedInteger.cpp -o main -O2
 
 int main() {
-    RandomAccessArray<7> ranArray;
-    vector<ull> comparison(50000000);
+    RandomAccessArray<32> ranArray;
 
     ifstream file("data/F0", ios::binary);
 
     ull number;
-    int count = 0;
 
     while(file.read(reinterpret_cast<char*>(&number), sizeof(number))) {
-        comparison[count++] = number;
         ranArray.encodeAndPush(number);
     }
 
@@ -26,34 +24,27 @@ int main() {
 
     ranArray.compact();
 
-    cout << "Layers " << ranArray.getLayers().size() << endl;
-
     vector<ull> randomNumbers;
 
     mt19937 random_value(random_device{}());
-    int n = 1000;
+    int n = 100;
     uniform_int_distribution<unsigned long long> out_of_hat_pull(0, 49999999);
     for (int i = 0; i < n; ++i) {
         ull x = out_of_hat_pull(random_value);
         randomNumbers.push_back(x);
     }
 
-    cout << "Checking matches" << endl;
-
-    count = 0;
+    auto now = std::chrono::high_resolution_clock::now();
     for (int i : randomNumbers) {
-        if (ranArray.accessScan(i) != comparison[i]) {
-            count++;
-            cout << ranArray.accessScan(i) << " " << comparison[i] << endl;
-        }
+        ull x = ranArray.accessScan(i);
     }
-
-    cout << "Mis match count " << count << endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = end-now;
+    cout << "Time taken for array setting " << time.count() << " nanos" << endl;
 
     // size 781251*64 = 50 Mega * 5 layers = 250 megs
     // size 5468751*64 = 350 megs * 5 layers = 1750000320 megs
 
     // vector bytes size 24
     // Total size = 1750000320+250+8+24 = ~~1.8 Gigabytes
-
 }

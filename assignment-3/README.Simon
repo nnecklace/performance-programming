@@ -1,0 +1,96 @@
+# Task 1 Generalised VByteArray
+
+Compiling: `g++ -std=c++14 -fsanitize=undefined main.cpp VByteArray.cpp -o main -O2`
+
+General feelings about this task. I didn't really get the idea of this task. It was not clear for me what the intend outcome was supposed to be. `accessScan` method was way too slow to ever be considered usable. Didn't come up with any other solution than a linear `O(n)` solution. On larger inputs (> 1000000) the lookup took way too long. The problem here was that there was no way to predict where the next VByte would start, the only way I found the VByte was to scan through the whole array. This also lead to, probably, the most ugly code I have ever written. The code is very fragile and quite unmaintainable, wouldn't be surprised if there was a bug or two in there. This is the result of the `accessScan` method being a real pain in the ass to implement.
+
+Statistics
+
+The assignment was kinda vague in the sense that the requirement, _large number of calls_, was left to interpretation. Anyway, if _large number of calls_ is larger than 100,  then you are going to have to wait a _very long time_ for the result :D
+
+Here are some stats for some tests I ran.
+
+```
+K = 10
+Time taken 14696816000 nanos
+Total memory 268435474
+Calls made = 100
+
+K = 7
+Time taken 16175459000 nanos
+Total memory 268435474
+Calls made = 120
+
+K = 62
+Time taken 35389924000 nanos
+Total memory 536870930
+Calls made = 110
+
+K = 24
+Time taken 18324338000 nanos
+Total memory 268435474
+Calls made = 100
+
+K = 32
+Time taken 17519960000 nanos
+Total memory 268435474
+Calls made = 100
+
+K = 48
+Time taken for array setting 21805994000 nanos
+Total memory 536870930
+Calls made = 100
+```
+
+VByteArray can take any integer between 0 and 62. This is because 63 is the largest VByte size (notice that counting starts from 0, so 62 would mean that there a are 63 data bits and 1 stop bit). 
+
+Summary and conclusions.
+
+As can be seen in the stats, memory used increased by a factor of 2 between various sizes, e.g. 32 - 48. This is because of the dynamic size of the VByteArray. The VByteArray uses exponential growth for its size. This means that every time the current size limit is reached, the array will increase its size by a factor of 2. This is a similair technique used by Java's ArrayList class.
+
+The total time taken was somewhat consistent. Although, the time calculation depends on what random locations of the array should be scanned. If all the locations are further back in the array, then it will naturally take a longer time to find these locations.
+
+# Task 2 Random access vbyte
+
+Compiling: `g++ -std=c++14 -fsanitize=undefined main.cpp BitArray.cpp RandomAccessArray.cpp PackedInteger.cpp -o main -O2`
+
+Task was much more fun than the previous one. Enjoyable to implement, and I feel I learned much more here. However, the assignment makes it, somewhat clear, that `PackedIntegerArray` and `BitArray` should have been implement with dynamic sizes. This was something I did not do previously and I didn't have time to refactor them, as it would have required some amount of work. I instead gave both arrays constant sizes, which takes waaaaaay more memory than needed (you can see this in my stats). This was the only problem I had with the task. 
+
+```
+K = 7
+Time taken 16175459000 nanos
+Total memory ~1.8 Gigabytes
+Calls made = 120
+
+K = 10
+Time taken 68000 nanos
+Total memory ~1.8 Gigabytes
+Calls made = 100
+
+K = 62
+Time taken 27000 nanos
+Total memory ~1.8 Gigabytes
+Total memory 536870930
+Calls made = 110
+
+K = 24
+Time taken 29000 nanos
+Total memory ~1.8 Gigabytes
+Calls made = 100
+
+K = 32
+Time taken 22000 nanos
+Total memory ~1.8 Gigabytes
+Calls made = 100
+
+K = 48
+Time taken 27000 nanos
+Total memory ~1.8 Gigabytes
+Calls made = 100
+```
+
+`K` can be any number between 1 and 63. In this case it's 63 since the stop bit is not added while encoding, unlike in the generalised array.
+
+Summary and conclusions.
+
+As can be seen from the results, the random access array is much faster than the generalised vbyte. However, the used memory is almost 4x as much as the generalised vbyte. This is due, as mentioned before, to the fact that both `PackedIntegerArray` and `BitArray` require a static size to be given at compile time. If they were dynamically sized, the random access array's total memory . used would be far far less.
