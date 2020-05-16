@@ -59,37 +59,45 @@ Task was much more fun than the previous one. Enjoyable to implement, and I feel
 ```
 K = 7
 Time taken 48000 nanos
-Total memory ~1.8 Gigabytes
+Total memory ~2.2 Gigabytes
 Calls made = 120
 
 K = 10
 Time taken 68000 nanos
-Total memory ~1.8 Gigabytes
+Total memory ~2.2 Gigabytes
 Calls made = 100
 
 K = 62
 Time taken 27000 nanos
-Total memory ~1.8 Gigabytes
+Total memory ~2.2 Gigabytes
 Calls made = 110
 
 K = 24
 Time taken 29000 nanos
-Total memory ~1.8 Gigabytes
+Total memory ~2.2 Gigabytes
 Calls made = 100
 
 K = 32
 Time taken 22000 nanos
-Total memory ~1.8 Gigabytes
+Total memory ~2.2 Gigabytes
 Calls made = 100
 
 K = 48
 Time taken 27000 nanos
-Total memory ~1.8 Gigabytes
+Total memory ~2.2 Gigabytes
 Calls made = 100
 ```
+
+BitArray = 100000128
+PackedIntegerArray = 350000064
+Layers = 5
+RandomAccessArray vector = 24
+Total memory = BitArray*Layers+PackedIntegerArray*Layers+RandomAccessArray vector
 
 `K` can be any number between 1 and 63. In this case it's 63 since the stop bit is not added while encoding, unlike in the generalised array.
 
 Summary and conclusions.
 
 As can be seen from the results, the random access array is much faster than the generalised vbyte. However, the used memory is almost 4x as much as the generalised vbyte. This is due, as mentioned before, to the fact that both `PackedIntegerArray` and `BitArray` require a static size to be given at compile time. If they were dynamically sized, the random access array's total memory . used would be far far less.
+
+The overall conclusion I made, based on both tasks, was that neither of the solutions were remotely usable. The generalised VByte was too slow to ever be usable, maybe if max amount of elements in the array is below a million it could be usable. RandomAccessArray uses too much memory to ever be usable on such high amount of numbers. Again, if the input would be limited to a million it would use way less memory and maybe usable.
