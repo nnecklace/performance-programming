@@ -7,8 +7,6 @@
 
 using namespace std;
 
-// g++ -fsanitize=undefined main.cpp BitArray.cpp RandomAccessArray.cpp PackedInteger.cpp -o main -O2
-
 int main() {
     RandomAccessArray<32> ranArray;
 
@@ -41,10 +39,4 @@ int main() {
     auto end = std::chrono::high_resolution_clock::now();
     auto time = end-now;
     cout << "Time taken for array setting " << time.count() << " nanos" << endl;
-
-    // size 781251*64 = 50 Mega * 5 layers = 250 megs
-    // size 5468751*64 = 350 megs * 5 layers = 1750000320 megs
-
-    // vector bytes size 24
-    // Total size = 1750000320+250+8+24 = ~~1.8 Gigabytes
 }
