@@ -52,7 +52,7 @@ The total time taken was somewhat consistent. Although, the time calculation dep
 
 # Task 2 Random access vbyte
 
-Compiling: `g++ -std=c++14 -fsanitize=undefined main.cpp BitArray.cpp RandomAccessArray.cpp PackedInteger.cpp -o main -O2`
+Compiling: `g++ -std=c++17 -fsanitize=undefined main.cpp BitArray.cpp RandomAccessArray.cpp PackedInteger.cpp -o main -O2`
 
 Task was much more fun than the previous one. Enjoyable to implement, and I feel I learned much more here. However, the assignment makes it, somewhat clear, that `PackedIntegerArray` and `BitArray` should have been implement with dynamic sizes. This was something I did not do previously and I didn't have time to refactor them, as it would have required some amount of work. I instead gave both arrays constant sizes, which takes waaaaaay more memory than needed (you can see this in my stats). This was the only problem I had with the task. 
 
